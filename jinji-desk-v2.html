@@ -1,0 +1,3800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人事デスク</title>
+<style>
+  :root {
+    --bg: #F0F2F5;
+    --surface: #FFFFFF;
+    --surface2: #F7F8FA;
+    --border: #E2E5EA;
+    --primary: #2563EB;
+    --primary-hover: #1D4ED8;
+    --primary-light: #EFF6FF;
+    --danger: #DC2626;
+    --danger-light: #FEF2F2;
+    --success: #16A34A;
+    --success-light: #F0FDF4;
+    --warning: #D97706;
+    --warning-light: #FFFBEB;
+    --text: #111827;
+    --text-sub: #6B7280;
+    --text-hint: #9CA3AF;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ===== LOGIN ===== */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    padding: 48px 40px 40px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .login-logo .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: var(--primary);
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .login-logo .logo-mark svg { color: white; }
+
+  .login-logo h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .login-logo p {
+    font-size: 12px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .form-input:focus { border-color: var(--primary); }
+  .form-input.error { border-color: var(--danger); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, opacity 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--border); }
+
+  .btn-danger {
+    background: var(--danger);
+    color: white;
+  }
+  .btn-danger:hover { background: #B91C1C; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-sub);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); }
+
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .error-msg {
+    background: var(--danger-light);
+    color: var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  /* ===== APP SHELL ===== */
+  #app-screen { display: none; min-height: 100vh; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-logo .logo-dot {
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topbar-logo .logo-dot svg { color: white; }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border-radius: 99px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-role { font-size: 11px; color: var(--text-hint); }
+
+  .btn-logout {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text-sub);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.1s;
+  }
+  .btn-logout:hover { background: var(--surface2); }
+
+  /* ===== MAIN CONTENT ===== */
+  .main-content {
+    padding: 28px 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: 2px;
+  }
+
+  /* ===== TABLE ===== */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+  }
+
+  .card-title { font-size: 14px; font-weight: 600; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-blue { background: var(--primary-light); color: var(--primary); }
+  .badge-green { background: var(--success-light); color: var(--success); }
+  .badge-yellow { background: var(--warning-light); color: var(--warning); }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-gray { background: var(--surface2); color: var(--text-sub); border: 1px solid var(--border); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(8px);
+    transition: transform 0.15s;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title { font-size: 16px; font-weight: 700; }
+
+  .modal-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-sub);
+    line-height: 1;
+  }
+
+  .modal-close:hover { background: var(--border); }
+
+  .modal-body { padding: 20px 24px; }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-hint {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  select.form-input { appearance: none; cursor: pointer; }
+
+  /* ===== TOAST ===== */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast-item {
+    padding: 12px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: var(--shadow-md);
+    animation: slideIn 0.2s ease;
+  }
+
+  .toast-success { background: #111827; color: white; }
+  .toast-error { background: var(--danger); color: white; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-sub);
+  }
+
+  .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+  .empty-state p { font-size: 14px; }
+
+  /* ===== PW CHANGE ===== */
+  .pw-change-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    display: none;
+  }
+
+  .pw-change-card {
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  /* ===== DASHBOARD BUTTONS ===== */
+  .dash-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 20px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .dash-btn:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+  .dash-btn:active { transform: translateY(0); }
+  .dash-btn-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dash-btn-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .dash-btn-desc {
+    font-size: 12px;
+    color: var(--text-sub);
+    line-height: 1.5;
+  }
+
+  /* ===== SUB NAV ===== */
+  .sub-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0;
+  }
+
+  .sub-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.1s, border-color 0.1s;
+  }
+
+  .sub-tab:hover { color: var(--text); }
+  .sub-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+  /* ===== TIMECARD ===== */
+  .punch-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: inherit;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  .punch-btn:active { transform: scale(0.96); }
+  .punch-btn-in { background: var(--primary); color: white; }
+  .punch-btn-out { background: var(--danger); color: white; }
+  .punch-btn-disabled { background: var(--border); color: var(--text-hint); cursor: not-allowed; }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .cal-header { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-sub); padding: 6px 0; }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    border: 1.5px solid transparent;
+    transition: background 0.1s;
+    padding: 4px;
+    min-height: 48px;
+  }
+  .cal-day:hover { background: var(--surface2); }
+  .cal-day.has-record { background: var(--primary-light); border-color: #BFDBFE; }
+  .cal-day.today { border-color: var(--primary); font-weight: 700; }
+  .cal-day.other-month { opacity: 0.3; cursor: default; }
+  .cal-day.selected { background: var(--primary); color: white; border-color: var(--primary); }
+  .cal-day.selected .cal-dot { background: white; }
+  .cal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); margin-top: 2px; }
+
+  /* ===== MOBILE NAV ===== */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+  }
+  .hamburger:hover { background: var(--surface2); }
+  .hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .mobile-menu {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    z-index: 99;
+    padding: 8px 16px 16px;
+    animation: slideDown 0.15s ease;
+  }
+  .mobile-menu.open { display: block; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .mobile-menu .nav-tab {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 768px) {
+    .topbar { padding: 0 16px; }
+    .nav-tabs { display: none; }
+    .hamburger { display: flex; }
+    .main-content { padding: 20px 16px; }
+    .form-row { grid-template-columns: 1fr; }
+    .topbar-logo span { display: none; }
+    .punch-btn { width: 120px; height: 120px; font-size: 16px; }
+    .user-name { display: none; }
+    .user-role { display: none; }
+  }
+
+  .loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: var(--surface);
+  }
+
+  .search-input:focus { border-color: var(--primary); }
+
+  .action-row { display: flex; gap: 8px; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+  }
+
+  .info-box {
+    background: var(--primary-light);
+    border: 1px solid #BFDBFE;
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #1E40AF;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-mark">
+        <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+      <h1>人事デスク</h1>
+      <p>HR Management System</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">社員番号</label>
+      <input type="text" id="login-id" class="form-input" autocomplete="off" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">パスワード</label>
+      <input type="password" id="login-pw" class="form-input" autocomplete="off">
+    </div>
+    <div id="login-error" class="error-msg">社員番号またはパスワードが正しくありません</div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()" style="margin-top:20px">
+      ログイン
+    </button>
+  </div>
+</div>
+
+<!-- 初回PW変更画面 -->
+<div id="pw-change-screen" class="pw-change-screen">
+  <div class="pw-change-card">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:8px">パスワードの設定</h2>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:24px">初回ログインのため、新しいパスワードを設定してください。</p>
+    <div class="form-group">
+      <label class="form-label">新しいパスワード</label>
+      <input type="password" id="new-pw1" class="form-input" autocomplete="new-password">
+      <div class="form-hint">英数字を含む6文字以上</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">パスワード（確認）</label>
+      <input type="password" id="new-pw2" class="form-input" autocomplete="new-password">
+    </div>
+    <div id="pw-change-error" class="error-msg"></div>
+    <button class="btn btn-primary" onclick="doChangePw()" style="margin-top:20px">設定して開始</button>
+  </div>
+</div>
+
+<!-- アプリ本体 -->
+<div id="app-screen">
+  <!-- モバイルメニュー -->
+  <div class="mobile-menu" id="mobile-menu"></div>
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-logo">
+        <div class="logo-dot">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <span>人事デスク</span>
+      </div>
+      <nav class="nav-tabs" id="nav-tabs" style="position:relative"></nav>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="user-avatar" id="topbar-avatar">?</div>
+        <div>
+          <div class="user-name" id="topbar-name">-</div>
+          <div class="user-role" id="topbar-role">-</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- 社員管理（総務部のみ） -->
+    <div class="page" id="page-employees">
+      <div class="page-header">
+        <div><div class="page-title">社員管理</div><div class="page-subtitle">社員の登録・編集・パスワードリセット</div></div>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>社員を追加
+        </button>
+      </div>
+      <div class="search-bar">
+        <input type="text" class="search-input" id="emp-search" placeholder="名前・番号・部署で検索..." oninput="renderEmployeeTable()">
+        <select class="form-input" id="emp-filter-role" onchange="renderEmployeeTable()" style="width:auto;padding:8px 14px">
+          <option value="">すべての役職</option>
+          <option>総務部</option><option>役員</option><option>承認者</option><option>正社員</option><option>パート・アルバイト</option>
+        </select>
+      </div>
+      <div class="card">
+        <table><thead><tr><th>番号</th><th>名前</th><th>役職</th><th>部署</th><th>入社日</th><th>状態</th><th></th></tr></thead>
+        <tbody id="emp-tbody"><tr><td colspan="7"><div class="empty-state"><p>読み込み中...</p></div></td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ホーム -->
+    <div class="page" id="page-home">
+      <div style="margin-bottom:28px">
+        <div class="page-title" id="dash-title">ホーム</div>
+        <div class="page-subtitle" id="dash-subtitle"></div>
+      </div>
+      <!-- ダッシュボードボタン -->
+      <div id="dashboard-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:32px"></div>
+      <!-- 有休残高 -->
+      <div id="balance-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"></div>
+      <!-- 有休残高のみホームに表示 -->
+    </div>
+
+    <!-- 休暇管理 -->
+    <div class="page" id="page-leave">
+      <div class="page-header"><div><div class="page-title">休暇管理</div></div></div>
+      <div class="sub-nav" id="leave-sub-nav"></div>
+      <div id="leave-sub-content">
+        <!-- 有休申請 -->
+        <div id="sub-paid-leave">
+          <div id="balance-cards-leave" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px"></div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">有休申請履歴</div>
+              <button class="btn btn-primary btn-sm" onclick="openLeaveModal()" id="btn-apply-leave">有休を申請する</button>
+            </div>
+            <table><thead><tr><th>種別</th><th>期間</th><th>日数</th><th>申請日</th><th>状態</th><th></th></tr></thead>
+            <tbody id="my-requests-tbody"><tr><td colspan="6"><div class="empty-state"><p>申請履歴がありません</p></div></td></tr></tbody></table>
+          </div>
+        </div>
+        <!-- 特別休暇 -->
+        <div id="sub-special-leave" style="display:none">
+          <div class="page-header" style="margin-bottom:16px">
+            <div></div>
+            <button class="btn btn-primary btn-sm" onclick="openSpecialLeaveModal()" id="btn-apply-special">特別休暇を申請する</button>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">特別休暇申請履歴</div></div>
+            <table><thead><tr><th>種別</th><th>内容</th><th>期間</th><th>日数</th><th>申請日</th><th>状態</th><th></th></tr></thead>
+            <tbody id="special-requests-tbody"><tr><td colspan="7"><div class="empty-state"><p>申請履歴がありません</p></div></td></tr></tbody></table>
+          </div>
+        </div>
+        <!-- 休日出勤 -->
+        <div id="sub-holiday-work" style="display:none">
+          <div class="page-header" style="margin-bottom:16px">
+            <div></div>
+            <button class="btn btn-primary btn-sm" onclick="openHolidayWorkModal()">休日出勤を申請する</button>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">休日出勤申請履歴</div></div>
+            <table><thead><tr><th>出勤日</th><th>時間</th><th>実働時間</th><th>理由</th><th>申請日</th><th>状態</th><th></th></tr></thead>
+            <tbody id="holiday-work-tbody"><tr><td colspan="7"><div class="empty-state"><p>申請履歴がありません</p></div></td></tr></tbody>
+</table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- タイムカード -->
+    <div class="page" id="page-timecard">
+      <div class="page-header"><div><div class="page-title">タイムカード</div><div class="page-subtitle" id="tc-subtitle"></div></div></div>
+      <!-- 担当社員一覧（承認者向け） -->
+      <div id="tc-team-area" style="display:none;margin-bottom:24px">
+        <div class="search-bar">
+          <input type="text" class="search-input" id="tc-team-search" placeholder="社員名で検索..." oninput="renderTcTeamList()">
+        </div>
+        <div id="tc-team-cards"></div>
+      </div>
+
+      <!-- 打刻エリア -->
+      <div id="tc-punch-area" style="display:flex;flex-direction:column;align-items:center;gap:24px;padding:32px 0;margin-bottom:24px">
+        <div style="font-size:13px;color:var(--text-sub)" id="tc-today-status">本日の打刻状況を確認中...</div>
+        <div style="display:flex;gap:32px">
+          <button class="punch-btn punch-btn-in" id="btn-punch-in" onclick="doPunch('in')">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+            出勤
+          </button>
+          <button class="punch-btn punch-btn-out" id="btn-punch-out" onclick="doPunch('out')">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            退勤
+          </button>
+        </div>
+      </div>
+      <!-- カレンダー -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="btn btn-ghost btn-sm" onclick="tcChangeMonth(-1)">◀</button>
+            <div class="card-title" id="tc-month-label"></div>
+            <button class="btn btn-ghost btn-sm" onclick="tcChangeMonth(1)">▶</button>
+          </div>
+          <div id="tc-emp-selector" style="display:none">
+            <select class="form-input" id="tc-view-emp" onchange="loadTcCalendar()" style="width:auto;padding:6px 12px;font-size:13px">
+              <option value="">社員を選択</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:16px">
+          <div class="calendar-grid" id="tc-calendar-header"></div>
+          <div class="calendar-grid" id="tc-calendar-body" style="margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 承認管理 -->
+    <div class="page" id="page-approve">
+      <div class="page-header">
+        <div><div class="page-title">承認管理</div><div class="page-subtitle">申請の承認・却下</div></div>
+        <select class="form-input" id="approve-filter" onchange="renderApproveTable()" style="width:auto;padding:8px 14px">
+          <option value="申請中">申請中のみ</option><option value="">すべて</option>
+          <option value="承認済">承認済</option><option value="却下">却下</option>
+        </select>
+      </div>
+      <div class="card">
+        <table><thead><tr><th>申請者</th><th>種別</th><th>期間</th><th>日数</th><th>申請日</th><th>状態</th><th></th></tr></thead>
+        <tbody id="approve-tbody"><tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 勤怠管理（総務部のみ） -->
+    <div class="page" id="page-attendance">
+      <div class="page-header"><div><div class="page-title">勤怠管理</div></div></div>
+      <div class="sub-nav" id="attendance-sub-nav"></div>
+      <div id="attendance-sub-content">
+        <!-- 有休残高 -->
+        <div id="sub-leave-balance" style="display:none">
+          <div class="search-bar">
+            <input type="text" class="search-input" id="balance-search" placeholder="社員名で検索..." oninput="renderBalanceList()">
+          </div>
+          <div id="balance-list"></div>
+        </div>
+        <!-- タイムカード一覧 -->
+        <div id="sub-tc-list" style="display:none">
+          <div class="search-bar">
+            <input type="text" class="search-input" id="tc-list-search" placeholder="社員名で検索..." oninput="renderTcList()">
+          </div>
+          <div id="tc-list-cards"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 人事評価（総務部のみ） -->
+    <div class="page" id="page-evaluation">
+      <div class="page-header"><div><div class="page-title">人事評価</div></div></div>
+      <div style="color:var(--text-sub);text-align:center;padding:60px">人事評価機能（近日実装予定）</div>
+    </div>
+
+    <!-- 設定（総務部のみ） -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><div><div class="page-title">設定</div></div></div>
+      <div class="sub-nav" id="settings-sub-nav"></div>
+      <div id="settings-sub-content">
+        <!-- 付与パターン -->
+        <div id="sub-patterns">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="openPatternModal()">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              パターンを追加
+            </button>
+          </div>
+          <div id="patterns-list"></div>
+        </div>
+        <!-- 全申請一覧 -->
+        <div id="sub-all-requests" style="display:none">
+          <div class="search-bar">
+            <input type="text" class="search-input" id="all-req-search" placeholder="社員名で検索..." oninput="renderAllRequests()">
+            <select class="form-input" id="all-req-filter" onchange="renderAllRequests()" style="width:auto;padding:8px 14px">
+              <option value="">すべて</option><option value="申請中">申請中</option>
+              <option value="承認済">承認済</option><option value="却下">却下</option>
+            </select>
+          </div>
+          <div class="card">
+            <table><thead><tr><th>申請者</th><th>種別</th><th>期間</th><th>日数</th><th>申請日</th><th>状態</th><th></th></tr></thead>
+            <tbody id="all-requests-tbody"><tr><td colspan="7"><div class="empty-state"><p>読み込み中...</p></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 社員追加・編集モーダル -->
+<div class="modal-overlay" id="emp-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="emp-modal-title">社員を追加</div>
+      <button class="modal-close" onclick="closeModal('emp-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="emp-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">社員番号 *</label>
+          <input type="text" id="emp-number" class="form-input" inputmode="numeric" placeholder="例: 001">
+          <div class="form-hint">数字のみ・ログインIDになります</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">名前 *</label>
+          <input type="text" id="emp-name" class="form-input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">役職 *</label>
+          <select id="emp-role" class="form-input">
+            <option value="">選択してください</option>
+            <option>総務部</option>
+            <option>役員</option>
+            <option>承認者</option>
+            <option>正社員</option>
+            <option>パート・アルバイト</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">部署</label>
+          <input type="text" id="emp-dept" class="form-input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">入社日 *</label>
+          <input type="date" id="emp-hire" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">1日の労働時間 *</label>
+          <input type="number" id="emp-hours" class="form-input" step="0.5" min="1" max="12" value="8">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">承認者</label>
+        <select id="emp-approver" class="form-input">
+          <option value="">なし（役員は不要）</option>
+        </select>
+        <div class="form-hint">役員は承認者不要。正社員・パートは承認者を設定してください。</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="emp-use-timecard" style="width:16px;height:16px">
+          タイムカード機能を使用する
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">有休付与パターン</label>
+        <select id="emp-leave-pattern" class="form-input">
+          <option value="">なし（総務部・役員など）</option>
+        </select>
+      </div>
+      <hr class="divider">
+      <div class="form-group" id="initial-pw-group">
+        <label class="form-label">初回パスワード *</label>
+        <input type="text" id="emp-initial-pw" class="form-input" autocomplete="off">
+        <div class="form-hint">社員が最初のログイン時にこのパスワードを使います（本人が変更必須）</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-modal')">キャンセル</button>
+      <button class="btn btn-primary" id="emp-save-btn" onclick="saveEmployee()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- PWリセット確認モーダル -->
+<div class="modal-overlay" id="pw-reset-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">パスワードリセット</div>
+      <button class="modal-close" onclick="closeModal('pw-reset-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box">
+        <strong id="pw-reset-name"></strong> の初回パスワードを再設定します。<br>
+        次回ログイン時に本人がパスワードを変更する必要があります。
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しい初回パスワード *</label>
+        <input type="text" id="pw-reset-value" class="form-input" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('pw-reset-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="doResetPw()">リセットする</button>
+    </div>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">社員を削除</div>
+      <button class="modal-close" onclick="closeModal('delete-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px"><strong id="delete-name"></strong> を削除しますか？<br>
+      <span style="color:var(--text-sub)">関連する申請データもすべて削除されます。この操作は元に戻せません。</span></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('delete-modal')">キャンセル</button>
+      <button class="btn btn-danger" onclick="doDeleteEmployee()">削除する</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 付与パターンモーダル -->
+<div class="modal-overlay" id="pattern-modal">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title" id="pattern-modal-title">付与パターンを追加</div>
+      <button class="modal-close" onclick="closeModal('pattern-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pattern-id">
+      <div class="form-group">
+        <label class="form-label">パターン名 *</label>
+        <input type="text" id="pattern-name" class="form-input" placeholder="例: 正社員フルタイム">
+      </div>
+      <div style="margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-sub)">付与ステップ（年次ごとの日数）</div>
+          <button class="btn btn-ghost btn-sm" onclick="addPatternStep()">＋ 追加</button>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;font-size:12px;color:var(--text-sub)">
+          最後に登録した行の日数が、それ以降の年次すべてに適用されます
+        </div>
+        <div id="pattern-steps-container"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('pattern-modal')">キャンセル</button>
+      <button class="btn btn-primary" id="pattern-save-btn" onclick="savePattern()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 申請削除確認モーダル -->
+<div class="modal-overlay" id="req-delete-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">申請を削除</div>
+      <button class="modal-close" onclick="closeModal('req-delete-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px">この申請を削除しますか？<br>
+      <span style="color:var(--text-sub)">この操作は元に戻せません。</span></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('req-delete-modal')">キャンセル</button>
+      <button class="btn btn-danger" onclick="doDeleteRequest()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 有休申請モーダル -->
+<div class="modal-overlay" id="leave-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">有休申請</div>
+      <button class="modal-close" onclick="closeModal('leave-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">取得区分 *</label>
+        <select id="leave-type" class="form-input" onchange="onLeaveTypeChange()">
+          <option value="終日">終日</option>
+          <option value="時間" id="leave-type-hour">時間（年5日分まで）</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">開始日 *</label>
+          <input type="date" id="leave-start" class="form-input" onchange="calcLeaveDays()">
+        </div>
+        <div class="form-group" id="leave-end-group">
+          <label class="form-label">終了日 *</label>
+          <input type="date" id="leave-end" class="form-input" onchange="calcLeaveDays()">
+        </div>
+      </div>
+      <div class="form-group" id="leave-days-group">
+        <label class="form-label">取得日数 *</label>
+        <input type="number" id="leave-days-input" class="form-input" step="0.5" min="0.5" placeholder="例: 3">
+        <div class="form-hint">土日祝や公休が含まれる場合は実際に取得する日数を入力してください</div>
+      </div>
+      <div id="leave-time-group" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">開始時刻</label>
+            <input type="time" id="leave-start-time" class="form-input" onchange="calcLeaveDays()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">終了時刻</label>
+            <input type="time" id="leave-end-time" class="form-input" onchange="calcLeaveDays()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">休憩時間（時間）</label>
+          <input type="number" id="leave-break" class="form-input" step="0.5" min="0" max="8" value="0" onchange="calcLeaveDays()">
+          <div class="form-hint">申請時間から自動的に引かれます</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">備考</label>
+        <input type="text" id="leave-reason" class="form-input">
+      </div>
+      <div id="leave-calc-result" style="background:var(--primary-light);border:1px solid #BFDBFE;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:#1E40AF;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('leave-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitLeave()">申請する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 特別休暇申請モーダル -->
+<div class="modal-overlay" id="special-leave-modal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <div class="modal-title">特別休暇申請</div>
+      <button class="modal-close" onclick="closeModal('special-leave-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">種別 *</label>
+        <select id="special-type" class="form-input" onchange="onSpecialTypeChange()">
+          <option value="">選択してください</option>
+          <option value="感染症">感染症（コロナ・インフル等）</option>
+          <option value="育児介護">育児・介護休業等</option>
+          <option value="慶弔_結婚" id="special-opt-kekkon">慶弔：結婚</option>
+          <option value="慶弔_出産" id="special-opt-shussan">慶弔：妻が出産</option>
+          <option value="慶弔_死亡_7" id="special-opt-death7">慶弔：死亡（配偶者・子・父母）</option>
+          <option value="慶弔_死亡_5" id="special-opt-death5">慶弔：死亡（配偶者の父母）</option>
+          <option value="慶弔_死亡_2" id="special-opt-death2">慶弔：死亡（兄弟姉妹・祖父母）</option>
+          <option value="裁判員">裁判員</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <!-- 育児介護：終日 or 時間 -->
+      <div id="special-ikuji-type-group" style="display:none" class="form-group">
+        <label class="form-label">取得区分 *</label>
+        <select id="special-ikuji-type" class="form-input" onchange="onSpecialIkujiTypeChange()">
+          <option value="終日">終日</option>
+          <option value="時間">時間</option>
+        </select>
+      </div>
+
+      <!-- 日付 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">開始日 *</label>
+          <input type="date" id="special-start" class="form-input" onchange="calcSpecialDays()">
+        </div>
+        <div class="form-group" id="special-end-group">
+          <label class="form-label">終了日</label>
+          <input type="date" id="special-end" class="form-input" onchange="calcSpecialDays()">
+        </div>
+      </div>
+
+      <!-- 時間取得（育児介護のみ） -->
+      <div id="special-time-group" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">開始時刻</label>
+            <input type="time" id="special-start-time" class="form-input" onchange="calcSpecialDays()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">終了時刻</label>
+            <input type="time" id="special-end-time" class="form-input" onchange="calcSpecialDays()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">休憩時間（時間）</label>
+          <input type="number" id="special-break" class="form-input" step="0.5" min="0" max="8" value="0" onchange="calcSpecialDays()">
+        </div>
+      </div>
+
+      <!-- 日数（自動表示 or 手入力） -->
+      <div class="form-group" id="special-days-group" style="display:none">
+        <label class="form-label" id="special-days-label">取得日数 *</label>
+        <input type="number" id="special-days-input" class="form-input" step="0.5" min="0.5">
+        <div class="form-hint" id="special-days-hint"></div>
+      </div>
+
+      <div id="special-calc-result" style="background:var(--primary-light);border:1px solid #BFDBFE;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:#1E40AF;display:none;margin-bottom:4px"></div>
+
+      <!-- 備考 -->
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label" id="special-reason-label">備考</label>
+        <input type="text" id="special-reason" class="form-input" placeholder="">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('special-leave-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitSpecialLeave()">申請する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 休日出勤申請モーダル -->
+<div class="modal-overlay" id="holiday-work-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">休日出勤申請</div>
+      <button class="modal-close" onclick="closeModal('holiday-work-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">出勤日 *</label>
+        <input type="date" id="hw-date" class="form-input">
+      </div>
+      <div id="hw-times-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addHwTime()" style="width:100%;margin-bottom:16px">
+        ＋ 出退勤時間を追加
+      </button>
+      <div class="form-group">
+        <label class="form-label">理由 *</label>
+        <input type="text" id="hw-reason" class="form-input" placeholder="理由を入力してください">
+      </div>
+      <div id="hw-calc-result" style="background:var(--primary-light);border:1px solid #BFDBFE;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:#1E40AF;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('holiday-work-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitHolidayWork()">申請する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 却下理由モーダル -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">却下理由を入力</div>
+      <button class="modal-close" onclick="closeModal('reject-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">却下理由 *</label>
+        <input type="text" id="reject-reason-input" class="form-input" placeholder="理由を入力してください">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('reject-modal')">キャンセル</button>
+      <button class="btn btn-danger" onclick="doReject()">却下する</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 社員タイムカードカレンダーモーダル（総務部・承認者用） -->
+<div class="modal-overlay" id="emp-tc-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="emp-tc-modal-title">勤怠カレンダー</div>
+      <button class="modal-close" onclick="closeModal('emp-tc-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <button class="btn btn-ghost btn-sm" onclick="empTcChangeMonth(-1)">◀</button>
+        <div style="font-weight:600;font-size:14px" id="emp-tc-month-label"></div>
+        <button class="btn btn-ghost btn-sm" onclick="empTcChangeMonth(1)">▶</button>
+      </div>
+      <div class="calendar-grid" id="emp-tc-calendar-header"></div>
+      <div class="calendar-grid" id="emp-tc-calendar-body" style="margin-top:4px"></div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:12px">日付をクリックすると勤怠の編集ができます</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-tc-modal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- タイムカード日別編集モーダル -->
+<div class="modal-overlay" id="tc-day-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="tc-day-modal-title">勤怠編集</div>
+      <button class="modal-close" onclick="closeModal('tc-day-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="tc-day-records"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addTcRecord()" style="margin-top:8px;width:100%">
+        ＋ 出退勤を追加
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('tc-day-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveTcDay()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 有休残高編集モーダル -->
+<div class="modal-overlay" id="balance-edit-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title"><span id="balance-edit-name"></span> の有休残高</div>
+      <button class="modal-close" onclick="closeModal('balance-edit-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="balance-edit-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('balance-edit-modal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://zpgjygjpzvdjbfmalmco.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZ2p5Z2pwenZkamJmbWFsbWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODk4OTksImV4cCI6MjA5NzE2NTg5OX0.rZIBjPmeX7J66irNwdm4-p7PuoUc5wBoaCd5uNYoAI0';
+
+// ===== API =====
+async function api(method, path, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=representation'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || res.statusText);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function apiGet(path) { return api('GET', path); }
+async function apiPost(path, body) { return api('POST', path, body); }
+async function apiPatch(path, body) { return api('PATCH', path, body); }
+async function apiDelete(path) { return api('DELETE', path); }
+
+// ===== STATE =====
+let currentUser = null;
+let employees = [];
+let deleteTargetId = null;
+let pwResetTargetId = null;
+
+// ===== HASH =====
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ===== LOGIN =====
+async function doLogin() {
+  const num = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!num || !pw) { err.style.display='block'; err.textContent='入力してください'; return; }
+
+  btn.innerHTML = '<span class="loading"></span>';
+  btn.disabled = true;
+  err.style.display = 'none';
+
+  try {
+    const rows = await apiGet(`employees?employee_number=eq.${encodeURIComponent(num)}&select=*`);
+    if (!rows || rows.length === 0) throw new Error('not found');
+
+    const emp = rows[0];
+
+    // 初回ログイン判定
+    if (emp.is_first_login) {
+      if (pw !== emp.initial_pw) throw new Error('wrong');
+      currentUser = emp;
+      showPwChange();
+      return;
+    }
+
+    // 通常ログイン
+    const hashed = await hashPw(pw);
+    if (hashed !== emp.hashed_pw) throw new Error('wrong');
+
+    currentUser = emp;
+    showApp();
+  } catch(e) {
+    err.style.display = 'block';
+    err.textContent = '社員番号またはパスワードが正しくありません';
+  } finally {
+    btn.innerHTML = 'ログイン';
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('login-pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ===== PW CHANGE =====
+function showPwChange() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('pw-change-screen').style.display = 'flex';
+}
+
+async function doChangePw() {
+  const pw1 = document.getElementById('new-pw1').value;
+  const pw2 = document.getElementById('new-pw2').value;
+  const err = document.getElementById('pw-change-error');
+  err.style.display = 'none';
+
+  if (pw1.length < 6) { err.style.display='block'; err.textContent='6文字以上で入力してください'; return; }
+  if (!/[a-zA-Z]/.test(pw1) || !/[0-9]/.test(pw1)) { err.style.display='block'; err.textContent='英字と数字を両方含めてください'; return; }
+  if (pw1 !== pw2) { err.style.display='block'; err.textContent='パスワードが一致しません'; return; }
+  if (pw1 === currentUser.initial_pw) { err.style.display='block'; err.textContent='初回パスワードとは異なるものを設定してください'; return; }
+
+  const hashed = await hashPw(pw1);
+  await apiPatch(`employees?id=eq.${currentUser.id}`, { hashed_pw: hashed, is_first_login: false });
+  currentUser.hashed_pw = hashed;
+  currentUser.is_first_login = false;
+
+  document.getElementById('pw-change-screen').style.display = 'none';
+  showApp();
+  toast('パスワードを設定しました', 'success');
+}
+
+// ===== APP =====
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+
+  // topbar
+  const initials = currentUser.name.charAt(0);
+  document.getElementById('topbar-avatar').textContent = initials;
+  document.getElementById('topbar-name').textContent = currentUser.name;
+  document.getElementById('topbar-role').textContent = currentUser.role;
+
+  // ナビ構築
+  buildNav();
+  // 初期ページ
+  document.getElementById('dash-title').textContent = `こんにちは、${currentUser.name}さん`;
+  document.getElementById('dash-subtitle').textContent = `${currentUser.role} · ${currentUser.department || ''}`;
+  if (currentUser.role === '総務部') {
+    showPage('employees');
+    loadEmployees();
+    loadPatterns();
+  } else {
+    showPage('home');
+    (async () => {
+      if (leavePatterns.length === 0) {
+        try { leavePatterns = await apiGet('leave_grant_patterns?select=*') || []; } catch(e){}
+        const allSteps = await apiGet('leave_grant_steps?select=*&order=sort_order.asc') || [];
+        patternSteps = {};
+        for (const s of allSteps) {
+          if (!patternSteps[s.pattern_id]) patternSteps[s.pattern_id] = [];
+          patternSteps[s.pattern_id].push(s);
+        }
+      }
+      await checkAndGrantLeave(currentUser);
+      loadMyDashboard();
+    })();
+  }
+}
+
+function buildNav() {
+  const tabs = document.getElementById('nav-tabs');
+  tabs.innerHTML = '';
+  const isSoumu = currentUser.role === '総務部';
+  const isApprover = ['承認者', '役員', '総務部'].includes(currentUser.role);
+  const useTC = currentUser.use_timecard;
+
+  const pages = [];
+  if (isSoumu) pages.push({ id: 'employees', label: '社員管理', fn: () => loadEmployees() });
+  pages.push({ id: 'home', label: 'ホーム', fn: () => loadMyDashboard() });
+  pages.push({ id: 'leave', label: '休暇管理', fn: () => initLeavePage() });
+  if (useTC) pages.push({ id: 'timecard', label: 'タイムカード', fn: () => initTimecardPage() });
+  if (isApprover) pages.push({ id: 'approve', label: '承認管理', fn: () => loadApproveList() });
+  if (currentUser.role === '承認者' || currentUser.role === '役員') pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
+  if (isSoumu) {
+    pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
+    pages.push({ id: 'evaluation', label: '人事評価', fn: () => {} });
+    pages.push({ id: 'settings', label: '設定', fn: () => initSettingsPage() });
+  }
+
+  const mobileMenu = document.getElementById('mobile-menu');
+  mobileMenu.innerHTML = '';
+
+  pages.forEach(p => {
+    // デスクトップタブ
+    const btn = document.createElement('button');
+    btn.className = 'nav-tab';
+    btn.dataset.page = p.id;
+    btn.textContent = p.label;
+    btn.onclick = () => { showPage(p.id); p.fn(); };
+    tabs.appendChild(btn);
+
+    // モバイルメニュー
+    const mbtn = document.createElement('button');
+    mbtn.className = 'nav-tab';
+    mbtn.dataset.page = p.id;
+    mbtn.textContent = p.label;
+    mbtn.onclick = () => { showPage(p.id); p.fn(); closeMobileMenu(); };
+    mobileMenu.appendChild(mbtn);
+  });
+}
+
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger-btn');
+  menu.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+}
+
+// メニュー外タップで閉じる
+document.addEventListener('click', e => {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger-btn');
+  if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+    closeMobileMenu();
+  }
+});
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById(`page-${id}`);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.dataset.page === id) t.classList.add('active');
+  });
+  closeMobileMenu();
+}
+
+function doLogout() {
+  currentUser = null;
+  employees = [];
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+// ===== EMPLOYEES =====
+async function loadEmployees() {
+  try {
+    employees = await apiGet('employees?select=*&order=employee_number.asc') || [];
+    renderEmployeeTable();
+  } catch(e) {
+    toast('社員データの読み込みに失敗しました', 'error');
+  }
+}
+
+function renderEmployeeTable() {
+  const q = document.getElementById('emp-search').value.toLowerCase();
+  const role = document.getElementById('emp-filter-role').value;
+  const tbody = document.getElementById('emp-tbody');
+
+  let list = employees.filter(e => {
+    const matchQ = !q || e.name.toLowerCase().includes(q) || e.employee_number.includes(q) || (e.department||'').toLowerCase().includes(q);
+    const matchR = !role || e.role === role;
+    return matchQ && matchR;
+  });
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>該当する社員がいません</p></div></td></tr>`;
+    return;
+  }
+
+  const roleBadge = r => {
+    const map = { '総務部':'badge-blue', '役員':'badge-red', '承認者':'badge-yellow', '正社員':'badge-green', 'パート・アルバイト':'badge-gray' };
+    return `<span class="badge ${map[r]||'badge-gray'}">${r}</span>`;
+  };
+
+  tbody.innerHTML = list.map(e => `
+    <tr>
+      <td style="font-family:monospace;font-weight:600">${e.employee_number}</td>
+      <td style="font-weight:500">${e.name}</td>
+      <td>${roleBadge(e.role)}</td>
+      <td style="color:var(--text-sub)">${e.department||'—'}</td>
+      <td style="color:var(--text-sub)">${e.hire_date||'—'}</td>
+      <td>${e.is_first_login ? '<span class="badge badge-yellow">初回未設定</span>' : '<span class="badge badge-green">設定済</span>'}</td>
+      <td>
+        <div class="action-row">
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${e.id}')">編集</button>
+          <button class="btn btn-ghost btn-sm" onclick="openPwResetModal('${e.id}')">PW</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="openDeleteModal('${e.id}')">削除</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== 承認者リスト =====
+function fillApproverSelect(excludeId = null) {
+  const sel = document.getElementById('emp-approver');
+  const approvers = employees.filter(e => (e.role === '承認者' || e.role === '役員') && e.id !== excludeId);
+  sel.innerHTML = '<option value="">なし（役員は不要）</option>' +
+    approvers.map(e => `<option value="${e.id}">${e.name}（${e.role}）</option>`).join('');
+}
+
+// ===== 追加モーダル =====
+function openAddModal() {
+  document.getElementById('emp-id').value = '';
+  document.getElementById('emp-number').value = '';
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-role').value = '';
+  document.getElementById('emp-dept').value = '';
+  document.getElementById('emp-hire').value = '';
+  document.getElementById('emp-hours').value = '8';
+  document.getElementById('emp-initial-pw').value = '';
+  document.getElementById('emp-modal-title').textContent = '社員を追加';
+  document.getElementById('emp-save-btn').textContent = '登録する';
+  document.getElementById('emp-number').disabled = false;
+  document.getElementById('initial-pw-group').style.display = 'block';
+  fillApproverSelect();
+  document.getElementById('emp-use-timecard').checked = false;
+  fillPatternSelect();
+  openModal('emp-modal');
+}
+
+// ===== 編集モーダル =====
+function openEditModal(id) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('emp-id').value = e.id;
+  document.getElementById('emp-number').value = e.employee_number;
+  document.getElementById('emp-number').disabled = true;
+  document.getElementById('emp-name').value = e.name;
+  document.getElementById('emp-role').value = e.role;
+  document.getElementById('emp-dept').value = e.department || '';
+  document.getElementById('emp-hire').value = e.hire_date || '';
+  document.getElementById('emp-hours').value = e.daily_work_hours || 8;
+  document.getElementById('emp-modal-title').textContent = '社員情報を編集';
+  document.getElementById('emp-save-btn').textContent = '保存する';
+  document.getElementById('initial-pw-group').style.display = 'none';
+  fillApproverSelect(e.id);
+  document.getElementById('emp-approver').value = e.approver_id || '';
+  document.getElementById('emp-use-timecard').checked = !!e.use_timecard;
+  fillPatternSelect();
+  document.getElementById('emp-leave-pattern').value = e.leave_pattern_id || '';
+  openModal('emp-modal');
+}
+
+// ===== 保存 =====
+async function saveEmployee() {
+  const id = document.getElementById('emp-id').value;
+  const number = document.getElementById('emp-number').value.trim();
+  const name = document.getElementById('emp-name').value.trim();
+  const role = document.getElementById('emp-role').value;
+  const dept = document.getElementById('emp-dept').value.trim();
+  const hire = document.getElementById('emp-hire').value;
+  const hours = parseFloat(document.getElementById('emp-hours').value);
+  const approver = document.getElementById('emp-approver').value || null;
+  const leavePatternId = document.getElementById('emp-leave-pattern').value || null;
+  const useTimecard = document.getElementById('emp-use-timecard').checked;
+  const initPw = document.getElementById('emp-initial-pw').value.trim();
+
+  if (!name || !role || !hire) { toast('必須項目を入力してください', 'error'); return; }
+  if (!id && (!number || !initPw)) { toast('社員番号と初回パスワードは必須です', 'error'); return; }
+  if (!id && !/^\d+$/.test(number)) { toast('社員番号は数字のみ入力してください', 'error'); return; }
+
+  const btn = document.getElementById('emp-save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>';
+
+  try {
+    if (id) {
+      await apiPatch(`employees?id=eq.${id}`, { name, role, department: dept, hire_date: hire, daily_work_hours: hours, approver_id: approver, leave_pattern_id: leavePatternId, use_timecard: useTimecard });
+      const idx = employees.findIndex(e => e.id === id);
+      if (idx >= 0) Object.assign(employees[idx], { name, role, department: dept, hire_date: hire, daily_work_hours: hours, approver_id: approver, leave_pattern_id: leavePatternId, use_timecard: useTimecard });
+      toast('社員情報を更新しました', 'success');
+    } else {
+      const exists = employees.find(e => e.employee_number === number);
+      if (exists) { toast('その社員番号はすでに使われています', 'error'); return; }
+      const newEmp = await apiPost('employees', { employee_number: number, name, role, department: dept, hire_date: hire, daily_work_hours: hours, approver_id: approver, leave_pattern_id: leavePatternId, use_timecard: useTimecard, initial_pw: initPw, is_first_login: true });
+      if (newEmp && newEmp[0]) employees.push(newEmp[0]);
+      toast('社員を登録しました', 'success');
+    }
+    closeModal('emp-modal');
+    renderEmployeeTable();
+  } catch(e) {
+    toast('保存に失敗しました: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = id ? '保存する' : '登録する';
+  }
+}
+
+// ===== PWリセット =====
+function openPwResetModal(id) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  pwResetTargetId = id;
+  document.getElementById('pw-reset-name').textContent = e.name;
+  document.getElementById('pw-reset-value').value = '';
+  openModal('pw-reset-modal');
+}
+
+async function doResetPw() {
+  const newPw = document.getElementById('pw-reset-value').value.trim();
+  if (!newPw) { toast('パスワードを入力してください', 'error'); return; }
+
+  await apiPatch(`employees?id=eq.${pwResetTargetId}`, { initial_pw: newPw, is_first_login: true, hashed_pw: null });
+  const idx = employees.findIndex(e => e.id === pwResetTargetId);
+  if (idx >= 0) { employees[idx].initial_pw = newPw; employees[idx].is_first_login = true; }
+  closeModal('pw-reset-modal');
+  renderEmployeeTable();
+  toast('パスワードをリセットしました', 'success');
+}
+
+// ===== 削除 =====
+function openDeleteModal(id) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  deleteTargetId = id;
+  document.getElementById('delete-name').textContent = e.name;
+  openModal('delete-modal');
+}
+
+async function doDeleteEmployee() {
+  if (!deleteTargetId) return;
+  await apiDelete(`employees?id=eq.${deleteTargetId}`);
+  employees = employees.filter(e => e.id !== deleteTargetId);
+  closeModal('delete-modal');
+  renderEmployeeTable();
+  toast('削除しました', 'success');
+}
+
+// ===== MODAL HELPERS =====
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+
+// ===== 有休申請 =====
+let leaveRequests = [];
+let approveRequests = [];
+let rejectTargetId = null;
+
+async function loadMyDashboard() {
+  // ダッシュボードボタン描画
+  renderDashboardButtons();
+
+  // パートは時間取得不可
+  const isHourOk = currentUser.role === '正社員' || currentUser.role === '承認者' || currentUser.role === '役員' || currentUser.role === '総務部';
+  const typeHour = document.getElementById('leave-type-hour');
+  if (typeHour) typeHour.style.display = isHourOk ? '' : 'none';
+
+  // 申請ボタン（役員・総務部は非表示）
+  const btnApply = document.getElementById('btn-apply-leave');
+  if (btnApply) {
+    btnApply.style.display = (currentUser.role === '役員' || currentUser.role === '総務部') ? 'none' : '';
+  }
+
+
+  // ホームの残高カードは非表示
+  const balEl = document.getElementById('balance-cards');
+  if (balEl) balEl.style.display = 'none';
+}
+
+function renderBalanceCards(balances) {
+  const el = document.getElementById('balance-cards');
+  if (!el) return;
+  const total = balances.reduce((s,b) => s + (parseFloat(b.granted_days) - parseFloat(b.used_days)), 0);
+  const granted = balances.reduce((s,b) => s + parseFloat(b.granted_days), 0);
+  const used = balances.reduce((s,b) => s + parseFloat(b.used_days), 0);
+
+  // 終日取得した日数を計算（承認済・申請中）
+  const usedFullDays = leaveRequests
+    .filter(r => r.leave_subtype === '終日' && r.status !== '却下')
+    .reduce((s, r) => s + parseFloat(r.total_days || 0), 0);
+
+  // 12月アラート
+  const now = new Date();
+  let decAlert = '';
+  if (now.getMonth() === 11) { // 12月
+    const remaining5 = Math.max(0, 5 - usedFullDays);
+    if (remaining5 > 0) {
+      decAlert = `<div style="grid-column:1/-1;background:var(--warning-light);border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:14px 18px;color:var(--warning);font-size:13px;font-weight:600">
+        ⚠️ あと<strong>${remaining5}日</strong>の終日有休を取得してください（12月末までに年5日取得が必要です）
+      </div>`;
+    }
+  }
+
+  el.innerHTML = decAlert + `
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">有休残日数</div>
+      <div style="font-size:28px;font-weight:700;color:var(--primary)">${total.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">付与合計</div>
+      <div style="font-size:28px;font-weight:700;color:var(--text)">${granted.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">使用済（終日）</div>
+      <div style="font-size:28px;font-weight:700;color:var(--text)">${usedFullDays.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
+    </div>
+  `;
+}
+
+function renderMyRequests() {
+  const tbody = document.getElementById('my-requests-tbody');
+  if (!tbody) return;
+  if (leaveRequests.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>申請履歴がありません</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = leaveRequests.map(r => {
+    const statusBadge = r.status === '承認済' ? 'badge-green' : r.status === '却下' ? 'badge-red' : r.status === '承認者承認済' ? 'badge-blue' : 'badge-yellow';
+    const period = r.leave_type === '時間'
+      ? `${r.start_date} ${r.start_time||''} ～ ${r.end_time||''}`
+      : r.start_date === r.end_date ? r.start_date : `${r.start_date} ～ ${r.end_date}`;
+    const days = r.leave_type === '時間' ? `${r.total_hours}時間` : `${r.total_days}日`;
+    const created = (r.created_at||'').slice(0,10);
+    const rejectInfo = r.status === '却下' && r.reject_reason ? `<div style="font-size:11px;color:var(--danger);margin-top:2px">却下理由: ${r.reject_reason}</div>` : '';
+    return `<tr>
+      <td>有給休暇（${r.leave_type}）</td>
+      <td>${period}</td>
+      <td>${days}</td>
+      <td style="color:var(--text-sub)">${created}</td>
+      <td><span class="badge ${statusBadge}">${r.status}</span>${r.over_limit ? '<span class="badge badge-yellow" style="margin-left:4px">⚠️ 上限超過</span>' : ''}${rejectInfo}</td>
+      <td>${r.status === '申請中' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="cancelLeave('${r.id}')">取消</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function cancelLeave(id) {
+  await apiDelete(`leave_requests?id=eq.${id}`);
+  leaveRequests = leaveRequests.filter(r => r.id !== id);
+  renderMyRequests();
+  toast('申請を取り消しました');
+}
+
+// ===== 有休申請モーダル =====
+function openLeaveModal() {
+  document.getElementById('leave-type').value = '終日';
+  document.getElementById('leave-start').value = '';
+  document.getElementById('leave-end').value = '';
+  document.getElementById('leave-reason').value = '';
+  document.getElementById('leave-start-time').value = '';
+  document.getElementById('leave-end-time').value = '';
+  document.getElementById('leave-break').value = '0';
+  document.getElementById('leave-days-input').value = '';
+  document.getElementById('leave-calc-result').style.display = 'none';
+  onLeaveTypeChange();
+  openModal('leave-modal');
+}
+
+function onLeaveTypeChange() {
+  const type = document.getElementById('leave-type').value;
+  const timeGroup = document.getElementById('leave-time-group');
+  const endGroup = document.getElementById('leave-end-group');
+  const daysGroup = document.getElementById('leave-days-group');
+  if (type === '時間') {
+    timeGroup.style.display = 'block';
+    endGroup.style.display = 'none';
+    if (daysGroup) daysGroup.style.display = 'none';
+  } else {
+    timeGroup.style.display = 'none';
+    endGroup.style.display = 'block';
+    if (daysGroup) daysGroup.style.display = 'block';
+  }
+  calcLeaveDays();
+}
+
+function getHourlyYearRange(baseDate) {
+  // 4月26日〜翌4月25日
+  const d = new Date(baseDate);
+  const month = d.getMonth() + 1; // 1-12
+  const day = d.getDate();
+  let yearStart;
+  if (month > 4 || (month === 4 && day >= 26)) {
+    yearStart = new Date(d.getFullYear(), 3, 26); // 4/26
+  } else {
+    yearStart = new Date(d.getFullYear() - 1, 3, 26);
+  }
+  const yearEnd = new Date(yearStart.getFullYear() + 1, 3, 25);
+  return { yearStart, yearEnd };
+}
+
+function calcUsedHourlyThisYear(startDate) {
+  const { yearStart, yearEnd } = getHourlyYearRange(startDate);
+  let usedHours = 0;
+  for (const r of leaveRequests) {
+    if (r.leave_subtype !== '時間') continue;
+    if (r.status === '却下') continue;
+    const d = new Date(r.start_date);
+    if (d >= yearStart && d <= yearEnd) {
+      usedHours += parseFloat(r.total_hours || 0);
+    }
+  }
+  return usedHours;
+}
+
+function calcLeaveDays() {
+  const type = document.getElementById('leave-type').value;
+  const start = document.getElementById('leave-start').value;
+  const resultEl = document.getElementById('leave-calc-result');
+
+  if (!start) { resultEl.style.display = 'none'; return; }
+
+  if (type === '終日') {
+    const end = document.getElementById('leave-end').value || start;
+    const d1 = new Date(start), d2 = new Date(end);
+    if (d2 < d1) { resultEl.style.display = 'none'; return; }
+    const calDays = Math.floor((d2 - d1) / 86400000) + 1;
+    resultEl.style.display = 'block';
+    resultEl.textContent = `期間：${calDays}日間（土日祝含む）`;
+  } else {
+    const st = document.getElementById('leave-start-time').value;
+    const et = document.getElementById('leave-end-time').value;
+    if (!st || !et) { resultEl.style.display = 'none'; return; }
+    const [sh,sm] = st.split(':').map(Number);
+    const [eh,em] = et.split(':').map(Number);
+    const breakH = parseFloat(document.getElementById('leave-break').value || 0);
+    const rawHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    const hours = rawHours - breakH;
+    if (hours <= 0) { resultEl.style.display = 'none'; return; }
+
+    const maxHours = (currentUser.daily_work_hours || 8) * 5;
+    const usedHours = calcUsedHourlyThisYear(start);
+    const remainHours = maxHours - usedHours;
+
+    resultEl.style.display = 'block';
+    const isOver = hours > remainHours;
+    resultEl.style.background = isOver ? 'var(--warning-light)' : 'var(--primary-light)';
+    resultEl.style.borderColor = isOver ? '#FCD34D' : '#BFDBFE';
+    resultEl.style.color = isOver ? 'var(--warning)' : '#1E40AF';
+    resultEl.innerHTML = `申請時間：<strong>${hours}時間</strong>（休憩${breakH}時間を除く）<br>
+      <span style="font-size:12px">今年度の時間取得：${usedHours}時間使用 / 上限${maxHours}時間</span>` +
+      (isOver ? '<br><span style="font-size:12px;font-weight:600">⚠️ 年間上限を超えています。申請は可能ですが承認者に確認されます。</span>' : '');
+  }
+}
+
+async function submitLeave() {
+  const type = document.getElementById('leave-type').value;
+  const start = document.getElementById('leave-start').value;
+  const reason = document.getElementById('leave-reason').value;
+
+  if (!start) { toast('開始日を入力してください', 'error'); return; }
+
+  // 役員IDを取得
+  const officerEmp = employees.find(e => e.role === '役員');
+  const officerId = officerEmp ? officerEmp.id : null;
+  // 承認者自身が申請する場合は承認者ステップをスキップ
+  const isApproverSelf = currentUser.role === '承認者';
+
+  let body = {
+    employee_id: currentUser.id,
+    leave_type: '有給休暇',
+    leave_subtype: type,
+    start_date: start,
+    reason,
+    status: '申請中',
+    approver_id: isApproverSelf ? null : (currentUser.approver_id || null),
+    officer_id: officerId
+  };
+
+  if (type === '終日') {
+    const end = document.getElementById('leave-end').value || start;
+    const d1 = new Date(start), d2 = new Date(end);
+    if (d2 < d1) { toast('終了日が開始日より前です', 'error'); return; }
+    const daysInput = parseFloat(document.getElementById('leave-days-input').value);
+    if (isNaN(daysInput) || daysInput <= 0) { toast('取得日数を入力してください', 'error'); return; }
+    body.end_date = end;
+    body.total_days = daysInput;
+  } else {
+    const st = document.getElementById('leave-start-time').value;
+    const et = document.getElementById('leave-end-time').value;
+    if (!st || !et) { toast('時刻を入力してください', 'error'); return; }
+    const [sh,sm] = st.split(':').map(Number);
+    const [eh,em] = et.split(':').map(Number);
+    const breakH = parseFloat(document.getElementById('leave-break').value || 0);
+    const rawHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    const hours = rawHours - breakH;
+    if (hours <= 0) { toast('取得時間が0以下になっています。時刻・休憩時間を確認してください', 'error'); return; }
+
+    // 年間上限チェック（警告のみ・ブロックしない）
+    const maxHours = (currentUser.daily_work_hours || 8) * 5;
+    const usedHours = calcUsedHourlyThisYear(start);
+    const overLimit = usedHours + hours > maxHours;
+    if (overLimit) {
+      body.over_limit = true;
+      body.over_limit_note = `時間取得年間上限超過（上限${maxHours}時間、使用済${usedHours}時間、今回${hours}時間）`;
+    }
+
+    body.end_date = start;
+    body.start_time = st;
+    body.end_time = et;
+    body.total_hours = hours;
+    body.reason = (reason ? reason + ' ' : '') + `（休憩${breakH}時間除く）`;
+  }
+
+  try {
+    const res = await apiPost('leave_requests', body);
+    if (res && res[0]) leaveRequests.unshift(res[0]);
+    renderMyRequests();
+    closeModal('leave-modal');
+    toast('申請しました');
+  } catch(e) {
+    toast('申請に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// ===== 承認管理 =====
+async function loadApproveList() {
+  try {
+    let query = 'leave_requests?select=*&order=created_at.desc';
+    if (currentUser.role === '承認者') {
+      // 承認者は自分が承認者の申請のみ
+      query += `&approver_id=eq.${currentUser.id}`;
+    }
+    // 役員・総務部は全申請を見る
+    approveRequests = await apiGet(query) || [];
+    renderApproveTable();
+  } catch(e) {
+    toast('データの読み込みに失敗しました', 'error');
+  }
+}
+
+function renderApproveTable() {
+  const tbody = document.getElementById('approve-tbody');
+  const filter = document.getElementById('approve-filter').value;
+
+  let list = approveRequests;
+  if (filter) list = list.filter(r => r.status === filter);
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(r => {
+    const emp = employees.find(e => e.id === r.employee_id);
+    const empName = emp ? emp.name : '不明';
+    const statusBadge = r.status === '承認済' ? 'badge-green' : r.status === '却下' ? 'badge-red' : r.status === '承認者承認済' ? 'badge-blue' : 'badge-yellow';
+    const period = r.leave_subtype === '時間'
+      ? `${r.start_date} ${r.start_time||''} ～ ${r.end_time||''}`
+      : r.start_date === r.end_date ? r.start_date : `${r.start_date} ～ ${r.end_date}`;
+    const days = r.leave_subtype === '時間' ? `${r.total_hours}時間` : `${r.total_days}日`;
+    const created = (r.created_at||'').slice(0,10);
+    const overLimitBadge = r.over_limit ? '<span class="badge badge-yellow" style="margin-left:4px">⚠️ 上限超過</span>' : '';
+    const isOfficer = currentUser.role === '役員' || currentUser.role === '総務部';
+    const isApprover = currentUser.role === '承認者';
+    const canApprove1 = isApprover && r.status === '申請中' && r.approver_id === currentUser.id;
+    const canApprove2 = isOfficer && (r.status === '承認者承認済' || (r.status === '申請中' && !r.approver_id));
+    const canAct = canApprove1 || canApprove2;
+    const approveLabel = canApprove2 ? '最終承認' : '承認';
+    const actions = canAct ? `
+      <div class="action-row">
+        <button class="btn btn-primary btn-sm" onclick="doApprove('${r.id}')">${approveLabel}</button>
+        <button class="btn btn-danger btn-sm" onclick="openRejectModal('${r.id}')">却下</button>
+      </div>` :
+      r.status === '申請中' ? '<span style="color:var(--text-hint);font-size:12px">承認者の承認待ち</span>' :
+      r.status === '承認者承認済' ? '<span style="color:var(--text-hint);font-size:12px">役員の承認待ち</span>' :
+      `<span style="color:var(--text-hint);font-size:12px">${r.reject_reason ? '理由: ' + r.reject_reason : '—'}</span>`;
+
+    return `<tr>
+      <td style="font-weight:500">${empName}</td>
+      <td>有給（${r.leave_subtype}）${overLimitBadge}</td>
+      <td>${period}</td>
+      <td>${days}</td>
+      <td style="color:var(--text-sub)">${created}</td>
+      <td><span class="badge ${statusBadge}">${r.status}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function doApprove(id) {
+  const req = approveRequests.find(r => r.id === id);
+  if (!req) return;
+
+  const isOfficer = currentUser.role === '役員' || currentUser.role === '総務部';
+  const isApprover = currentUser.role === '承認者';
+
+  let newStatus = req.status;
+  let updateBody = { updated_at: new Date().toISOString() };
+
+  if (isApprover && req.status === '申請中') {
+    // 承認者が1段階目を承認
+    newStatus = '承認者承認済';
+    updateBody.status = newStatus;
+    updateBody.approver_approved_at = new Date().toISOString();
+  } else if (isOfficer && (req.status === '承認者承認済' || req.approver_id === null)) {
+    // 役員が最終承認（承認者スキップ含む）
+    newStatus = '承認済';
+    updateBody.status = newStatus;
+    updateBody.officer_approved_at = new Date().toISOString();
+    updateBody.officer_id = currentUser.id;
+  } else if (isOfficer && req.status === '申請中' && req.approver_id === null) {
+    // 承認者なし（承認者本人の申請）
+    newStatus = '承認済';
+    updateBody.status = newStatus;
+    updateBody.officer_approved_at = new Date().toISOString();
+  } else {
+    toast('この申請は現在あなたが承認できる状態ではありません', 'error');
+    return;
+  }
+
+  await apiPatch(`leave_requests?id=eq.${id}`, updateBody);
+
+  // 有休残高を減算（最終承認時のみ）
+  if (newStatus === '承認済' && req.leave_type === '有給休暇') {
+    const balances = await apiGet(`paid_leave_balance?employee_id=eq.${req.employee_id}&order=expire_date.asc`);
+    if (balances && balances.length > 0) {
+      let remaining = req.leave_subtype === '時間' ? (parseFloat(req.total_hours) / (req.daily_work_hours || 8)) : parseFloat(req.total_days);
+      for (const bal of balances) {
+        if (remaining <= 0) break;
+        const avail = parseFloat(bal.granted_days) - parseFloat(bal.used_days);
+        if (avail <= 0) continue;
+        const deduct = Math.min(avail, remaining);
+        await apiPatch(`paid_leave_balance?id=eq.${bal.id}`, { used_days: parseFloat(bal.used_days) + deduct });
+        remaining -= deduct;
+      }
+    }
+  }
+
+  const idx = approveRequests.findIndex(r => r.id === id);
+  if (idx >= 0) approveRequests[idx].status = newStatus;
+  renderApproveTable();
+  toast(newStatus === '承認済' ? '最終承認しました' : '1段階目の承認をしました');
+}
+
+function openRejectModal(id) {
+  rejectTargetId = id;
+  document.getElementById('reject-reason-input').value = '';
+  openModal('reject-modal');
+}
+
+async function doReject() {
+  const reason = document.getElementById('reject-reason-input').value.trim();
+  if (!reason) { toast('却下理由を入力してください', 'error'); return; }
+
+  await apiPatch(`leave_requests?id=eq.${rejectTargetId}`, { status: '却下', reject_reason: reason, approver_id: currentUser.id, updated_at: new Date().toISOString() });
+  const idx = approveRequests.findIndex(r => r.id === rejectTargetId);
+  if (idx >= 0) { approveRequests[idx].status = '却下'; approveRequests[idx].reject_reason = reason; }
+  closeModal('reject-modal');
+  renderApproveTable();
+  toast('却下しました');
+}
+
+
+// ===== 付与パターン =====
+let leavePatterns = [];
+let patternSteps = {}; // { patternId: [steps] }
+let patternStepRows = []; // 編集中のステップ行
+let deleteRequestTargetId = null;
+let allRequests = [];
+
+async function loadPatterns() {
+  try {
+    leavePatterns = await apiGet('leave_grant_patterns?select=*&order=created_at.asc') || [];
+    // 全パターンのステップを取得
+    if (leavePatterns.length > 0) {
+      const steps = await apiGet('leave_grant_steps?select=*&order=sort_order.asc') || [];
+      patternSteps = {};
+      for (const s of steps) {
+        if (!patternSteps[s.pattern_id]) patternSteps[s.pattern_id] = [];
+        patternSteps[s.pattern_id].push(s);
+      }
+    }
+    renderPatternsList();
+  } catch(e) {
+    toast('付与パターンの読み込みに失敗しました', 'error');
+  }
+}
+
+function renderPatternsList() {
+  const el = document.getElementById('patterns-list');
+  if (!el) return;
+  if (leavePatterns.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>付与パターンがありません</p></div></div>';
+    return;
+  }
+  el.innerHTML = leavePatterns.map(p => {
+    const steps = (patternSteps[p.id] || []).sort((a,b) => a.sort_order - b.sort_order);
+    const stepsHtml = steps.map((s, i) => `
+      <tr>
+        <td style="color:var(--text-sub)">${i + 1}回目</td>
+        <td>${i === 0 ? '入社6ヶ月後' : `${i}回目の翌4/26`}</td>
+        <td style="font-weight:600">${s.days}日</td>
+        <td style="font-size:11px;color:var(--text-hint)">${i === steps.length - 1 ? '← 以降この日数で固定' : ''}</td>
+      </tr>
+    `).join('');
+    return `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title">${p.name}</div>
+          <div class="action-row">
+            <button class="btn btn-ghost btn-sm" onclick="openEditPattern('${p.id}')">編集</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePattern('${p.id}')">削除</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>回次</th><th>タイミング</th><th>付与日数</th><th></th></tr></thead>
+          <tbody>${stepsHtml || '<tr><td colspan="4" style="color:var(--text-hint);padding:16px">ステップなし</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  }).join('');
+}
+
+function fillPatternSelect() {
+  const sel = document.getElementById('emp-leave-pattern');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">なし（総務部・役員など）</option>' +
+    leavePatterns.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+// ステップ行のUI
+function renderPatternStepRows() {
+  const container = document.getElementById('pattern-steps-container');
+  if (!container) return;
+  if (patternStepRows.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-hint);font-size:13px;padding:12px;text-align:center">ステップを追加してください</div>';
+    return;
+  }
+  container.innerHTML = patternStepRows.map((row, i) => {
+    const label = i === 0 ? '1回目（入社6ヶ月後）' : `${i + 1}回目（${i}回目の翌4/26）`;
+    const isLast = i === patternStepRows.length - 1;
+    return `
+    <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;margin-bottom:10px">
+      <div>
+        <label class="form-label">${label}</label>
+        <input type="number" class="form-input" value="${row.days}" step="0.5" min="0" max="40"
+          placeholder="付与日数"
+          onchange="patternStepRows[${i}].days = parseFloat(this.value)">
+      </div>
+      <div style="margin-top:18px;font-size:11px;color:var(--text-hint);white-space:nowrap">${isLast ? '以降固定' : ''}</div>
+      <button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-top:18px" onclick="removePatternStep(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addPatternStep() {
+  patternStepRows.push({ days: 10 });
+  renderPatternStepRows();
+}
+
+function removePatternStep(i) {
+  patternStepRows.splice(i, 1);
+  renderPatternStepRows();
+}
+
+function openPatternModal() {
+  document.getElementById('pattern-id').value = '';
+  document.getElementById('pattern-name').value = '';
+  document.getElementById('pattern-modal-title').textContent = '付与パターンを追加';
+  document.getElementById('pattern-save-btn').textContent = '登録する';
+  patternStepRows = [];
+  renderPatternStepRows();
+  openModal('pattern-modal');
+}
+
+function openEditPattern(id) {
+  const p = leavePatterns.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pattern-id').value = p.id;
+  document.getElementById('pattern-name').value = p.name;
+  document.getElementById('pattern-modal-title').textContent = '付与パターンを編集';
+  document.getElementById('pattern-save-btn').textContent = '保存する';
+  const steps = (patternSteps[id] || []).sort((a,b) => a.sort_order - b.sort_order);
+  patternStepRows = steps.map(s => ({ id: s.id, days: parseFloat(s.days) }));
+  renderPatternStepRows();
+  openModal('pattern-modal');
+}
+
+async function savePattern() {
+  const id = document.getElementById('pattern-id').value;
+  const name = document.getElementById('pattern-name').value.trim();
+  if (!name) { toast('パターン名を入力してください', 'error'); return; }
+  if (patternStepRows.length === 0) { toast('ステップを1つ以上追加してください', 'error'); return; }
+
+  let patternId = id;
+  if (id) {
+    await apiPatch(`leave_grant_patterns?id=eq.${id}`, { name });
+    const idx = leavePatterns.findIndex(p => p.id === id);
+    if (idx >= 0) leavePatterns[idx].name = name;
+    // 既存ステップを全削除して再登録
+    await apiDelete(`leave_grant_steps?pattern_id=eq.${id}`);
+  } else {
+    const res = await apiPost('leave_grant_patterns', { name });
+    if (res && res[0]) { leavePatterns.push(res[0]); patternId = res[0].id; }
+  }
+
+  // ステップを登録
+  for (let i = 0; i < patternStepRows.length; i++) {
+    const row = patternStepRows[i];
+    await apiPost('leave_grant_steps', {
+      pattern_id: patternId,
+      months_after_hire: i === 0 ? 6 : 0, // 初回のみ6ヶ月、以降は4/26で管理
+      days: row.days,
+      sort_order: i
+    });
+  }
+
+  // ステップ再読み込み
+  const steps = await apiGet(`leave_grant_steps?pattern_id=eq.${patternId}&order=sort_order.asc`) || [];
+  patternSteps[patternId] = steps;
+
+  closeModal('pattern-modal');
+  renderPatternsList();
+  toast(id ? 'パターンを更新しました' : 'パターンを登録しました');
+}
+
+async function deletePattern(id) {
+  await apiDelete(`leave_grant_steps?pattern_id=eq.${id}`);
+  await apiDelete(`leave_grant_patterns?id=eq.${id}`);
+  leavePatterns = leavePatterns.filter(p => p.id !== id);
+  delete patternSteps[id];
+  renderPatternsList();
+  toast('パターンを削除しました');
+}
+
+// ===== 有休自動付与 =====
+async function checkAndGrantLeave(emp) {
+  if (!emp.leave_pattern_id || !emp.hire_date) return;
+
+  // ステップ取得
+  let steps = patternSteps[emp.leave_pattern_id];
+  if (!steps) {
+    steps = await apiGet(`leave_grant_steps?pattern_id=eq.${emp.leave_pattern_id}&order=sort_order.asc`) || [];
+    patternSteps[emp.leave_pattern_id] = steps;
+  }
+  if (steps.length === 0) return;
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const hireDate = new Date(emp.hire_date);
+  hireDate.setHours(0,0,0,0);
+
+  // 既存の付与履歴を取得（最新状態で）
+  let existing = await apiGet(`paid_leave_balance?employee_id=eq.${emp.id}&order=granted_date.asc`) || [];
+
+  // 期限切れ残高を処理（2年経過分）
+  for (const bal of existing) {
+    const exp = new Date(bal.expire_date);
+    exp.setHours(0,0,0,0);
+    if (today > exp && parseFloat(bal.granted_days) > parseFloat(bal.used_days)) {
+      await apiPatch(`paid_leave_balance?id=eq.${bal.id}`, { granted_days: parseFloat(bal.used_days) });
+    }
+  }
+
+  // ===== 付与すべき日付リストを全部計算してまとめて付与 =====
+  // 初回：入社6ヶ月後
+  const firstGrantDate = new Date(hireDate);
+  firstGrantDate.setMonth(firstGrantDate.getMonth() + 6);
+  firstGrantDate.setHours(0,0,0,0);
+
+  // 付与予定リストを作成
+  const grantSchedule = [];
+
+  // 1回目
+  if (today >= firstGrantDate) {
+    grantSchedule.push({ date: new Date(firstGrantDate), stepIndex: 0 });
+  }
+
+  // 2回目以降（4/26）
+  if (today >= firstGrantDate) {
+    // 初回付与後の最初の4/26を計算
+    let next426 = new Date(firstGrantDate.getFullYear(), 3, 26);
+    if (next426 <= firstGrantDate) {
+      next426 = new Date(firstGrantDate.getFullYear() + 1, 3, 26);
+    }
+    let stepIndex = 1; // 2回目
+    while (next426 <= today) {
+      grantSchedule.push({ date: new Date(next426), stepIndex });
+      next426 = new Date(next426.getFullYear() + 1, 3, 26);
+      stepIndex++;
+    }
+  }
+
+  // 付与済みでないものだけ付与
+  let granted = false;
+  for (const schedule of grantSchedule) {
+    const alreadyGranted = existing.some(b => {
+      const gd = new Date(b.granted_date);
+      gd.setHours(0,0,0,0);
+      return Math.abs(gd - schedule.date) < 86400000 * 10;
+    });
+    if (!alreadyGranted) {
+      const si = Math.min(schedule.stepIndex, steps.length - 1);
+      const days = parseFloat(steps[si].days);
+      const expireDate = new Date(schedule.date);
+      expireDate.setFullYear(expireDate.getFullYear() + 2);
+      const newBal = await apiPost('paid_leave_balance', {
+        employee_id: emp.id,
+        granted_days: days,
+        used_days: 0,
+        granted_date: schedule.date.toISOString().slice(0,10),
+        expire_date: expireDate.toISOString().slice(0,10)
+      });
+      if (newBal && newBal[0]) existing.push(newBal[0]);
+      const label = schedule.stepIndex === 0 ? '初回' : `${schedule.stepIndex + 1}回目`;
+      toast(`${emp.name}さんに有休${days}日を付与しました（${label}）`);
+      granted = true;
+    }
+  }
+  return granted;
+}
+
+// ===== 全申請一覧（総務部） =====
+async function loadAllRequests() {
+  try {
+    allRequests = await apiGet('leave_requests?select=*&order=created_at.desc') || [];
+    renderAllRequests();
+  } catch(e) {
+    toast('読み込みに失敗しました', 'error');
+  }
+}
+
+function renderAllRequests() {
+  const tbody = document.getElementById('all-requests-tbody');
+  if (!tbody) return;
+  const filter = document.getElementById('all-req-filter').value;
+  const q = document.getElementById('all-req-search').value.toLowerCase();
+
+  let list = allRequests;
+  if (filter) list = list.filter(r => r.status === filter);
+  if (q) list = list.filter(r => {
+    const emp = employees.find(e => e.id === r.employee_id);
+    return emp && emp.name.toLowerCase().includes(q);
+  });
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(r => {
+    const emp = employees.find(e => e.id === r.employee_id);
+    const empName = emp ? emp.name : '不明';
+    const statusBadge = r.status === '承認済' ? 'badge-green' : r.status === '却下' ? 'badge-red' : r.status === '承認者承認済' ? 'badge-blue' : 'badge-yellow';
+    const period = r.leave_subtype === '時間'
+      ? `${r.start_date} ${r.start_time||''} ～ ${r.end_time||''}`
+      : r.start_date === r.end_date ? r.start_date : `${r.start_date} ～ ${r.end_date}`;
+    const days = r.leave_subtype === '時間' ? `${r.total_hours}時間` : `${r.total_days}日`;
+    const created = (r.created_at||'').slice(0,10);
+    return `<tr>
+      <td style="font-weight:500">${empName}</td>
+      <td>有給（${r.leave_subtype}）</td>
+      <td>${period}</td>
+      <td>${days}</td>
+      <td style="color:var(--text-sub)">${created}</td>
+      <td><span class="badge ${statusBadge}">${r.status}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="openDeleteRequestModal('${r.id}')">削除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openDeleteRequestModal(id) {
+  deleteRequestTargetId = id;
+  openModal('req-delete-modal');
+}
+
+async function doDeleteRequest() {
+  if (!deleteRequestTargetId) return;
+  await apiDelete(`leave_requests?id=eq.${deleteRequestTargetId}`);
+  allRequests = allRequests.filter(r => r.id !== deleteRequestTargetId);
+  closeModal('req-delete-modal');
+  renderAllRequests();
+  toast('申請を削除しました');
+}
+
+
+// ===== サブナビ =====
+function buildSubNav(navId, contentId, tabs) {
+  const nav = document.getElementById(navId);
+  if (!nav) return;
+  nav.innerHTML = '';
+  // タブIDを使って明示的に制御
+  const allTabIds = tabs.map(t => t.id);
+  tabs.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'sub-tab' + (i === 0 ? ' active' : '');
+    btn.textContent = t.label;
+    btn.onclick = () => {
+      nav.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      allTabIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      const el = document.getElementById(t.id);
+      if (el) { el.style.display = 'block'; if (t.fn) t.fn(); }
+    };
+    nav.appendChild(btn);
+  });
+  // 最初のタブを表示
+  if (tabs.length > 0) {
+    allTabIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    const first = document.getElementById(tabs[0].id);
+    if (first) { first.style.display = 'block'; if (tabs[0].fn) tabs[0].fn(); }
+  }
+}
+
+function initLeavePage() {
+  const role = currentUser.role;
+  const tabs = [
+    { id: 'sub-paid-leave', label: '有休申請', fn: loadLeavePage }
+  ];
+  if (role !== 'パート・アルバイト') {
+    tabs.push({ id: 'sub-special-leave', label: '特別休暇', fn: loadSpecialLeavePage });
+  } else {
+    tabs.push({ id: 'sub-special-leave', label: '特別休暇', fn: loadSpecialLeavePage });
+  }
+  tabs.push({ id: 'sub-holiday-work', label: '休日出勤' });
+  buildSubNav('leave-sub-nav', 'leave-sub-content', tabs);
+}
+
+async function loadLeavePage() {
+  // 有休残高を休暇管理ページにも表示
+  try {
+    const balances = await apiGet(`paid_leave_balance?employee_id=eq.${currentUser.id}&order=expire_date.asc`);
+    renderBalanceCardsTo(balances || [], 'balance-cards-leave');
+  } catch(e) {}
+  // 申請履歴
+  try {
+    const rows = await apiGet(`leave_requests?employee_id=eq.${currentUser.id}&order=created_at.desc&select=*`);
+    leaveRequests = rows || [];
+    renderMyRequests();
+  } catch(e) {}
+}
+
+function renderBalanceCardsTo(balances, targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const total = balances.reduce((s,b) => s + (parseFloat(b.granted_days) - parseFloat(b.used_days)), 0);
+  const granted = balances.reduce((s,b) => s + parseFloat(b.granted_days), 0);
+  const usedFullDays = leaveRequests
+    .filter(r => r.leave_subtype === '終日' && r.status !== '却下')
+    .reduce((s, r) => s + parseFloat(r.total_days || 0), 0);
+
+  const now = new Date();
+  let decAlert = '';
+  if (now.getMonth() === 11) {
+    const remaining5 = Math.max(0, 5 - usedFullDays);
+    if (remaining5 > 0) {
+      decAlert = `<div style="grid-column:1/-1;background:var(--warning-light);border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:14px 18px;color:var(--warning);font-size:13px;font-weight:600">
+        ⚠️ あと<strong>${remaining5}日</strong>の終日有休を取得してください（12月末までに年5日取得が必要です）
+      </div>`;
+    }
+  }
+
+  el.innerHTML = decAlert + `
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">有休残日数</div>
+      <div style="font-size:28px;font-weight:700;color:var(--primary)">${total.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">付与合計</div>
+      <div style="font-size:28px;font-weight:700;color:var(--text)">${granted.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">使用済（終日）</div>
+      <div style="font-size:28px;font-weight:700;color:var(--text)">${usedFullDays.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
+    </div>
+  `;
+}
+
+function initAttendancePage() {
+  if (currentUser.role === '承認者' || currentUser.role === '役員') {
+    buildSubNav('attendance-sub-nav', 'attendance-sub-content', [
+      { id: 'sub-tc-list', label: 'タイムカード一覧', fn: loadTcList }
+    ]);
+  } else {
+    buildSubNav('attendance-sub-nav', 'attendance-sub-content', [
+      { id: 'sub-leave-balance', label: '有休残高', fn: loadBalanceList },
+      { id: 'sub-tc-list', label: 'タイムカード一覧', fn: loadTcList }
+    ]);
+  }
+}
+
+async function loadTcList() {
+  if (employees.length === 0) await loadEmployees();
+  renderTcList();
+}
+
+function renderTcList() {
+  const el = document.getElementById('tc-list-cards');
+  if (!el) return;
+  const q = (document.getElementById('tc-list-search')?.value || '').toLowerCase();
+  const isApprover = currentUser.role === '承認者' || currentUser.role === '役員';
+  const list = employees.filter(e =>
+    e.use_timecard &&
+    e.role !== '総務部' &&
+    (!isApprover || e.approver_id === currentUser.id) &&
+    (!q || e.name.toLowerCase().includes(q))
+  );
+  if (list.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>タイムカード対象の社員がいません</p></div></div>';
+    return;
+  }
+  el.innerHTML = list.map(e => `
+    <div class="card" style="margin-bottom:10px;cursor:pointer;transition:box-shadow 0.15s"
+      onmouseover="this.style.boxShadow='var(--shadow-md)'"
+      onmouseout="this.style.boxShadow='var(--shadow)'"
+      onclick="openEmpTcModal('${e.id}', '${e.name}')">
+      <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-avatar" style="width:36px;height:36px;font-size:14px">${e.name.charAt(0)}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px">${e.name}</div>
+            <div style="font-size:12px;color:var(--text-sub)">${e.role} · ${e.department || ''}</div>
+          </div>
+        </div>
+        <span style="font-size:12px;color:var(--primary)">勤怠カレンダー →</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 社員のタイムカードをモーダルで表示
+let empTcModalEmpId = null;
+let empTcYear = new Date().getFullYear();
+let empTcMonth = new Date().getMonth();
+let empTcRecords = [];
+
+async function openEmpTcModal(empId, empName) {
+  empTcModalEmpId = empId;
+  empTcYear = new Date().getFullYear();
+  empTcMonth = new Date().getMonth();
+  document.getElementById('emp-tc-modal-title').textContent = `${empName} の勤怠カレンダー`;
+  await loadEmpTcCalendar();
+  openModal('emp-tc-modal');
+}
+
+async function loadEmpTcCalendar() {
+  const startDate = `${empTcYear}-${String(empTcMonth+1).padStart(2,'0')}-01`;
+  const endDate = new Date(empTcYear, empTcMonth + 1, 0).toISOString().slice(0,10);
+  const label = document.getElementById('emp-tc-month-label');
+  if (label) label.textContent = `${empTcYear}年${empTcMonth+1}月`;
+  try {
+    empTcRecords = await apiGet(`timecard_records?employee_id=eq.${empTcModalEmpId}&work_date=gte.${startDate}&work_date=lte.${endDate}&select=*&order=work_date.asc`) || [];
+  } catch(e) { empTcRecords = []; }
+  renderEmpTcCalendar();
+}
+
+function empTcChangeMonth(dir) {
+  empTcMonth += dir;
+  if (empTcMonth > 11) { empTcMonth = 0; empTcYear++; }
+  if (empTcMonth < 0) { empTcMonth = 11; empTcYear--; }
+  loadEmpTcCalendar();
+}
+
+function renderEmpTcCalendar() {
+  const headerEl = document.getElementById('emp-tc-calendar-header');
+  const bodyEl = document.getElementById('emp-tc-calendar-body');
+  if (!headerEl || !bodyEl) return;
+  const days = ['日','月','火','水','木','金','土'];
+  headerEl.innerHTML = days.map(d => `<div class="cal-header">${d}</div>`).join('');
+  const firstDay = new Date(empTcYear, empTcMonth, 1).getDay();
+  const lastDate = new Date(empTcYear, empTcMonth + 1, 0).getDate();
+  const today = todayJST();
+  const recordDates = new Set(empTcRecords.map(r => r.work_date));
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day other-month"></div>';
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${empTcYear}-${String(empTcMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasRec = recordDates.has(dateStr);
+    const isToday = dateStr === today;
+    const classes = ['cal-day', hasRec ? 'has-record' : '', isToday ? 'today' : ''].filter(Boolean).join(' ');
+    html += `<div class="${classes}" onclick="openEmpTcDayEdit('${dateStr}')">
+      <span>${d}</span>${hasRec ? '<div class="cal-dot"></div>' : ''}
+    </div>`;
+  }
+  bodyEl.innerHTML = html;
+}
+
+async function openEmpTcDayEdit(dateStr) {
+  tcEditDate = dateStr;
+  tcViewEmpId = empTcModalEmpId;
+  document.getElementById('tc-day-modal-title').textContent = `${dateStr} の勤怠`;
+  tcDayRecords = await apiGet(`timecard_records?employee_id=eq.${empTcModalEmpId}&work_date=eq.${dateStr}&select=*&order=punch_in.asc`) || [];
+  renderTcDayRecords();
+  openModal('tc-day-modal');
+}
+
+function initSettingsPage() {
+  buildSubNav('settings-sub-nav', 'settings-sub-content', [
+    { id: 'sub-patterns', label: '付与パターン', fn: () => { loadPatterns(); } },
+    { id: 'sub-all-requests', label: '全申請一覧', fn: loadAllRequests }
+  ]);
+}
+
+// ===== 有休残高管理（総務部） =====
+async function loadBalanceList() {
+  if (employees.length === 0) await loadEmployees();
+  renderBalanceList();
+}
+
+function renderBalanceList() {
+  const el = document.getElementById('balance-list');
+  if (!el) return;
+  const q = (document.getElementById('balance-search')?.value || '').toLowerCase();
+  const list = employees.filter(e => e.role !== '総務部' && (!q || e.name.toLowerCase().includes(q)));
+  if (list.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>該当する社員がいません</p></div></div>';
+    return;
+  }
+  el.innerHTML = list.map(e => `
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-avatar" style="width:32px;height:32px;font-size:13px">${e.name.charAt(0)}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px">${e.name}</div>
+            <div style="font-size:12px;color:var(--text-sub)">${e.role} · ${e.department || ''}</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openBalanceEditModal('${e.id}', '${e.name}')">残高を編集</button>
+      </div>
+      <div id="balance-detail-${e.id}" style="padding:12px 16px;font-size:13px;color:var(--text-sub)">読み込み中...</div>
+    </div>
+  `).join('');
+  // 各社員の残高を非同期で読み込む
+  list.forEach(e => loadEmpBalance(e.id));
+}
+
+async function loadEmpBalance(empId) {
+  const el = document.getElementById(`balance-detail-${empId}`);
+  if (!el) return;
+  try {
+    const bals = await apiGet(`paid_leave_balance?employee_id=eq.${empId}&order=expire_date.asc`) || [];
+    if (bals.length === 0) { el.textContent = '有休付与なし'; return; }
+    const total = bals.reduce((s,b) => s + (parseFloat(b.granted_days) - parseFloat(b.used_days)), 0);
+    el.innerHTML = `
+      <span style="font-size:18px;font-weight:700;color:var(--primary)">${total.toFixed(1)}日</span>
+      <span style="color:var(--text-hint);margin-left:8px">残日数</span>
+      <span style="margin-left:16px;font-size:12px;color:var(--text-sub)">
+        ${bals.map(b => `付与${b.granted_days}日（期限: ${b.expire_date}）`).join(' / ')}
+      </span>
+    `;
+  } catch(e) { el.textContent = '読み込みエラー'; }
+}
+
+let balanceEditEmpId = null;
+function openBalanceEditModal(empId, empName) {
+  balanceEditEmpId = empId;
+  document.getElementById('balance-edit-name').textContent = empName;
+  loadBalanceEditList(empId);
+  openModal('balance-edit-modal');
+}
+
+async function loadBalanceEditList(empId) {
+  const el = document.getElementById('balance-edit-list');
+  el.innerHTML = '<div style="color:var(--text-sub);font-size:13px">読み込み中...</div>';
+  const bals = await apiGet(`paid_leave_balance?employee_id=eq.${empId}&order=granted_date.asc`) || [];
+  if (bals.length === 0) { el.innerHTML = '<div style="color:var(--text-sub);font-size:13px">付与履歴がありません</div>'; return; }
+  el.innerHTML = bals.map(b => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px">付与日: ${b.granted_date} ／ 期限: ${b.expire_date}</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">付与日数</label>
+          <input type="number" class="form-input" step="0.5" min="0" max="40"
+            value="${b.granted_days}" id="bal-granted-${b.id}" onchange="updateBalance('${b.id}')">
+        </div>
+        <div class="form-group">
+          <label class="form-label">使用済日数</label>
+          <input type="number" class="form-input" step="0.5" min="0" max="40"
+            value="${b.used_days}" id="bal-used-${b.id}" onchange="updateBalance('${b.id}')">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateBalance(balId) {
+  const granted = parseFloat(document.getElementById(`bal-granted-${balId}`).value);
+  const used = parseFloat(document.getElementById(`bal-used-${balId}`).value);
+  await apiPatch(`paid_leave_balance?id=eq.${balId}`, { granted_days: granted, used_days: used });
+  if (balanceEditEmpId) loadEmpBalance(balanceEditEmpId);
+  toast('残高を更新しました');
+}
+
+// ===== タイムカード =====
+let tcYear = new Date().getFullYear();
+let tcMonth = new Date().getMonth();
+let tcRecords = [];
+let tcViewEmpId = null;
+
+function initTimecardPage() {
+  const isApprover = currentUser.role === '承認者';
+  const isSoumu = currentUser.role === '総務部';
+  document.getElementById('tc-subtitle').textContent = currentUser.name;
+
+  // 承認者は担当社員一覧を表示、自分の打刻エリアも表示
+  const teamArea = document.getElementById('tc-team-area');
+  const punchArea = document.getElementById('tc-punch-area');
+  const calCard = document.getElementById('tc-emp-selector')?.closest('.card') || null;
+
+  if (isApprover) {
+    teamArea.style.display = 'none';
+    // renderTcTeamList();
+  } else {
+    teamArea.style.display = 'none';
+  }
+
+  // セレクタは非表示（一覧カードで選ぶ）
+  const selArea = document.getElementById('tc-emp-selector');
+  if (selArea) selArea.style.display = 'none';
+
+  tcViewEmpId = null;
+  checkTodayPunch();
+  loadTcCalendar();
+}
+
+function renderTcTeamList() {
+  const el = document.getElementById('tc-team-cards');
+  if (!el) return;
+  const q = (document.getElementById('tc-team-search')?.value || '').toLowerCase();
+  const teamEmps = employees.filter(e =>
+    e.use_timecard &&
+    e.approver_id === currentUser.id &&
+    (!q || e.name.toLowerCase().includes(q))
+  );
+  if (teamEmps.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>担当社員がいません</p></div></div>';
+    return;
+  }
+  el.innerHTML = teamEmps.map(e => `
+    <div class="card" style="margin-bottom:10px;cursor:pointer;transition:box-shadow 0.15s"
+      onmouseover="this.style.boxShadow='var(--shadow-md)'"
+      onmouseout="this.style.boxShadow='var(--shadow)'"
+      onclick="selectTcEmp('${e.id}', '${e.name}')">
+      <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-avatar" style="width:36px;height:36px;font-size:14px">${e.name.charAt(0)}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px">${e.name}</div>
+            <div style="font-size:12px;color:var(--text-sub)">${e.role} · ${e.department || ''}</div>
+          </div>
+        </div>
+        <span style="font-size:12px;color:var(--primary)">カレンダーを見る →</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectTcEmp(empId, empName) {
+  tcViewEmpId = empId;
+  document.getElementById('tc-subtitle').textContent = empName;
+  // カレンダーエリアまでスクロール
+  document.getElementById('tc-month-label').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  loadTcCalendar();
+}
+
+// JSTの現在日時を返す
+function nowJST() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return jst;
+}
+
+function todayJST() {
+  return nowJST().toISOString().slice(0, 10);
+}
+
+// UTC timestamptzをJST時刻文字列(HH:MM)に変換
+function toJSTTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(11, 16);
+}
+
+async function checkTodayPunch() {
+  const today = todayJST();
+  const empId = tcViewEmpId || currentUser.id;
+  const recs = await apiGet(`timecard_records?employee_id=eq.${empId}&work_date=eq.${today}&select=*&order=punch_in.asc`) || [];
+  const statusEl = document.getElementById('tc-today-status');
+  const btnIn = document.getElementById('btn-punch-in');
+  const btnOut = document.getElementById('btn-punch-out');
+  if (!statusEl) return;
+
+  if (recs.length === 0) {
+    statusEl.textContent = '本日未打刻';
+    btnIn.className = 'punch-btn punch-btn-in';
+    btnIn.onclick = () => doPunch('in');
+    btnOut.className = 'punch-btn punch-btn-disabled';
+    btnOut.onclick = null;
+  } else {
+    const last = recs[recs.length - 1];
+    if (!last.punch_out) {
+      statusEl.textContent = `出勤中: ${toJSTTime(last.punch_in)} ～`;
+      btnIn.className = 'punch-btn punch-btn-disabled';
+      btnIn.onclick = null;
+      btnOut.className = 'punch-btn punch-btn-out';
+      btnOut.onclick = () => doPunch('out');
+    } else {
+      statusEl.textContent = `本日の打刻: ${recs.map(r => toJSTTime(r.punch_in) + '～' + toJSTTime(r.punch_out)).join(' / ')}`;
+      btnIn.className = 'punch-btn punch-btn-in';
+      btnIn.onclick = () => doPunch('in');
+      btnOut.className = 'punch-btn punch-btn-disabled';
+      btnOut.onclick = null;
+    }
+  }
+}
+
+async function doPunch(type) {
+  const now = nowJST();
+  const today = now.toISOString().slice(0, 10);
+  const nowUtc = new Date().toISOString(); // DBにはUTCで保存
+  const empId = currentUser.id;
+
+  if (type === 'in') {
+    await apiPost('timecard_records', {
+      employee_id: empId,
+      work_date: today,
+      punch_in: nowUtc,
+      break_hours: 0
+    });
+    toast('出勤を打刻しました');
+  } else {
+    // punch_outがnullの最新レコードを取得
+    const recs = await apiGet(`timecard_records?employee_id=eq.${empId}&work_date=eq.${today}&select=*&order=punch_in.desc`) || [];
+    const target = recs.find(r => !r.punch_out);
+    if (!target) { toast('出勤記録が見つかりません', 'error'); return; }
+    await apiPatch(`timecard_records?id=eq.${target.id}`, { punch_out: nowUtc });
+    toast('退勤を打刻しました');
+  }
+  await checkTodayPunch();
+  loadTcCalendar();
+}
+
+async function loadTcCalendar() {
+  const empId = document.getElementById('tc-view-emp')?.value || currentUser.id;
+  tcViewEmpId = empId || null;
+  const label = document.getElementById('tc-month-label');
+  if (label) label.textContent = `${tcYear}年${tcMonth + 1}月`;
+
+  const startDate = `${tcYear}-${String(tcMonth+1).padStart(2,'0')}-01`;
+  const endDate = new Date(tcYear, tcMonth + 1, 0).toISOString().slice(0,10);
+
+  try {
+    tcRecords = await apiGet(`timecard_records?employee_id=eq.${empId}&work_date=gte.${startDate}&work_date=lte.${endDate}&select=*&order=work_date.asc`) || [];
+  } catch(e) { tcRecords = []; }
+
+  renderTcCalendar();
+}
+
+function tcChangeMonth(dir) {
+  tcMonth += dir;
+  if (tcMonth > 11) { tcMonth = 0; tcYear++; }
+  if (tcMonth < 0) { tcMonth = 11; tcYear--; }
+  loadTcCalendar();
+}
+
+function renderTcCalendar() {
+  const headerEl = document.getElementById('tc-calendar-header');
+  const bodyEl = document.getElementById('tc-calendar-body');
+  if (!headerEl || !bodyEl) return;
+
+  const days = ['日','月','火','水','木','金','土'];
+  headerEl.innerHTML = days.map(d => `<div class="cal-header">${d}</div>`).join('');
+
+  const firstDay = new Date(tcYear, tcMonth, 1).getDay();
+  const lastDate = new Date(tcYear, tcMonth + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0,10);
+
+  const recordDates = new Set(tcRecords.map(r => r.work_date));
+
+  let html = '';
+  // 前月の空白
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day other-month"></div>';
+
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${tcYear}-${String(tcMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasRec = recordDates.has(dateStr);
+    const isToday = dateStr === today;
+    const classes = ['cal-day', hasRec ? 'has-record' : '', isToday ? 'today' : ''].filter(Boolean).join(' ');
+    html += `<div class="${classes}" onclick="openTcDayModal('${dateStr}')">
+      <span>${d}</span>
+      ${hasRec ? '<div class="cal-dot"></div>' : ''}
+    </div>`;
+  }
+
+  bodyEl.innerHTML = html;
+}
+
+let tcEditDate = null;
+let tcDayRecords = [];
+
+async function openTcDayModal(dateStr) {
+  tcEditDate = dateStr;
+  document.getElementById('tc-day-modal-title').textContent = `${dateStr} の勤怠`;
+  const empId = tcViewEmpId || currentUser.id;
+  tcDayRecords = await apiGet(`timecard_records?employee_id=eq.${empId}&work_date=eq.${dateStr}&select=*&order=punch_in.asc`) || [];
+  renderTcDayRecords();
+  openModal('tc-day-modal');
+}
+
+function renderTcDayRecords() {
+  const el = document.getElementById('tc-day-records');
+  if (!el) return;
+  if (tcDayRecords.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-sub);font-size:13px;padding:8px">打刻記録がありません</div>';
+    return;
+  }
+  el.innerHTML = tcDayRecords.map((r, i) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px">${i+1}回目</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">出勤時刻</label>
+          <input type="time" class="form-input" value="${toJSTTime(r.punch_in)}"
+            onchange="tcDayRecords[${i}].punch_in_edit = this.value">
+        </div>
+        <div class="form-group">
+          <label class="form-label">退勤時刻</label>
+          <input type="time" class="form-input" value="${toJSTTime(r.punch_out)}"
+            onchange="tcDayRecords[${i}].punch_out_edit = this.value">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">休憩時間（時間）</label>
+        <input type="number" class="form-input" step="0.5" min="0" max="8" value="${r.break_hours||0}"
+          onchange="tcDayRecords[${i}].break_hours_edit = parseFloat(this.value)">
+      </div>
+      <button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-top:8px" onclick="deleteTcRecord('${r.id}', ${i})">この記録を削除</button>
+    </div>
+  `).join('');
+}
+
+async function saveTcDay() {
+  const empId = tcViewEmpId || currentUser.id;
+  for (const r of tcDayRecords) {
+    const updates = {};
+    if (r.punch_in_edit !== undefined) {
+      // JSTをUTCに変換して保存
+      const jstIn = new Date(`${tcEditDate}T${r.punch_in_edit}:00+09:00`);
+      updates.punch_in = jstIn.toISOString();
+    }
+    if (r.punch_out_edit !== undefined) {
+      if (r.punch_out_edit) {
+        const jstOut = new Date(`${tcEditDate}T${r.punch_out_edit}:00+09:00`);
+        updates.punch_out = jstOut.toISOString();
+      } else {
+        updates.punch_out = null;
+      }
+    }
+    if (r.break_hours_edit !== undefined) updates.break_hours = r.break_hours_edit;
+    if (Object.keys(updates).length > 0) {
+      await apiPatch(`timecard_records?id=eq.${r.id}`, updates);
+    }
+  }
+  closeModal('tc-day-modal');
+  loadTcCalendar();
+  toast('勤怠を保存しました');
+}
+
+async function addTcRecord() {
+  const empId = tcViewEmpId || currentUser.id;
+  const res = await apiPost('timecard_records', { employee_id: empId, work_date: tcEditDate, punch_in: `${tcEditDate}T09:00:00`, break_hours: 0 });
+  if (res && res[0]) tcDayRecords.push(res[0]);
+  renderTcDayRecords();
+}
+
+async function deleteTcRecord(id, idx) {
+  await apiDelete(`timecard_records?id=eq.${id}`);
+  tcDayRecords.splice(idx, 1);
+  renderTcDayRecords();
+  loadTcCalendar();
+}
+
+
+// ===== ダッシュボードボタン =====
+function renderDashboardButtons() {
+  const el = document.getElementById('dashboard-buttons');
+  if (!el) return;
+  const role = currentUser.role;
+  const isSoumu = role === '総務部';
+  const isApprover = ['承認者', '役員', '総務部'].includes(role);
+
+  const buttons = [];
+
+  // 休暇申請・管理（役員・総務部以外）
+  if (role !== '役員' && role !== '総務部') {
+    buttons.push({
+      icon: '🗓', color: '#EFF6FF', iconColor: '#2563EB',
+      label: '休暇申請・管理',
+      desc: '有休・特別休暇・休日出勤の申請',
+      onclick: () => { showPage('leave'); initLeavePage(); }
+    });
+  }
+
+  // タイムカード
+  if (currentUser.use_timecard) {
+    buttons.push({
+      icon: '⏰', color: '#F0FDF4', iconColor: '#16A34A',
+      label: 'タイムカード',
+      desc: '出退勤の打刻・勤怠確認',
+      onclick: () => { showPage('timecard'); initTimecardPage(); }
+    });
+  }
+
+  // 承認管理
+  if (isApprover) {
+    buttons.push({
+      icon: '✅', color: '#FFFBEB', iconColor: '#D97706',
+      label: '承認管理',
+      desc: '申請の承認・却下',
+      onclick: () => { showPage('approve'); loadApproveList(); }
+    });
+  }
+
+  // 勤怠管理（承認者・役員・総務部）
+  if (isApprover) {
+    buttons.push({
+      icon: '📊', color: '#F5F3FF', iconColor: '#7C3AED',
+      label: '勤怠管理',
+      desc: role === '総務部' ? '有休残高・タイムカード一覧' : '担当社員のタイムカード',
+      onclick: () => { showPage('attendance'); initAttendancePage(); }
+    });
+  }
+
+  // 社員管理（総務部のみ）
+  if (isSoumu) {
+    buttons.push({
+      icon: '👥', color: '#FFF1F2', iconColor: '#DC2626',
+      label: '社員管理',
+      desc: '社員の登録・編集・パスワード管理',
+      onclick: () => { showPage('employees'); loadEmployees(); }
+    });
+  }
+
+  // 人事評価
+  buttons.push({
+    icon: '⭐', color: '#FFF7ED', iconColor: '#EA580C',
+    label: '人事評価',
+    desc: '評価の入力・確認',
+    onclick: () => { showPage('evaluation'); }
+  });
+
+  // 設定（総務部のみ）
+  if (isSoumu) {
+    buttons.push({
+      icon: '⚙️', color: '#F8FAFC', iconColor: '#64748B',
+      label: '設定',
+      desc: '付与パターン・申請一覧',
+      onclick: () => { showPage('settings'); initSettingsPage(); }
+    });
+  }
+
+  el.innerHTML = buttons.map((b, i) => `
+    <button class="dash-btn" onclick="dashBtns[${i}].onclick()">
+      <div class="dash-btn-icon" style="background:${b.color}">
+        <span style="font-size:22px">${b.icon}</span>
+      </div>
+      <div>
+        <div class="dash-btn-label">${b.label}</div>
+        <div class="dash-btn-desc">${b.desc}</div>
+      </div>
+    </button>
+  `).join('');
+
+  // onclickをグローバルに保存
+  window.dashBtns = buttons;
+}
+
+
+// ===== 特別休暇 =====
+let specialRequests = [];
+
+// 種別ごとの設定
+const SPECIAL_TYPES = {
+  '感染症':        { days: 5,    manual: false, needReason: false, label: '感染症（コロナ・インフル等）' },
+  '育児介護':      { days: null, manual: false, needReason: false, label: '育児・介護休業等', ikuji: true },
+  '慶弔_結婚':    { days: 5,    manual: false, needReason: false, label: '慶弔：結婚', kekkon: true },
+  '慶弔_出産':    { days: 2,    manual: false, needReason: false, label: '慶弔：妻が出産', kekkon: true },
+  '慶弔_死亡_7':  { days: 7,    manual: false, needReason: false, label: '慶弔：死亡（配偶者・子・父母）', kekkon: true },
+  '慶弔_死亡_5':  { days: 5,    manual: false, needReason: false, label: '慶弔：死亡（配偶者の父母）', kekkon: true },
+  '慶弔_死亡_2':  { days: 2,    manual: false, needReason: false, label: '慶弔：死亡（兄弟姉妹・祖父母）', kekkon: true },
+  '裁判員':       { days: null, manual: true,  needReason: false, label: '裁判員' },
+  'その他':       { days: null, manual: true,  needReason: true,  label: 'その他' },
+};
+
+async function loadSpecialLeavePage() {
+  // 慶弔は正社員のみ表示
+  const isSeishain = currentUser.role === '正社員' || currentUser.role === '承認者' || currentUser.role === '役員' || currentUser.role === '総務部';
+  ['special-opt-kekkon','special-opt-shussan','special-opt-death7','special-opt-death5','special-opt-death2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isSeishain ? '' : 'none';
+  });
+
+  try {
+    const rows = await apiGet(`leave_requests?employee_id=eq.${currentUser.id}&leave_type=eq.特別休暇&order=created_at.desc&select=*`);
+    specialRequests = rows || [];
+    renderSpecialRequests();
+  } catch(e) {}
+}
+
+function renderSpecialRequests() {
+  const tbody = document.getElementById('special-requests-tbody');
+  if (!tbody) return;
+  if (specialRequests.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請履歴がありません</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = specialRequests.map(r => {
+    const statusBadge = r.status === '承認済' ? 'badge-green' : r.status === '却下' ? 'badge-red' : r.status === '承認者承認済' ? 'badge-blue' : 'badge-yellow';
+    const cfg = SPECIAL_TYPES[r.leave_subtype] || {};
+    const period = r.leave_subtype === '育児介護' && r.start_time
+      ? `${r.start_date} ${r.start_time}～${r.end_time}`
+      : r.start_date === r.end_date ? r.start_date : `${r.start_date}～${r.end_date}`;
+    const days = r.total_hours ? `${r.total_hours}時間` : `${r.total_days}日`;
+    const created = (r.created_at||'').slice(0,10);
+    return `<tr>
+      <td>特別休暇</td>
+      <td style="font-weight:500">${cfg.label || r.leave_subtype}</td>
+      <td>${period}</td>
+      <td>${days}</td>
+      <td style="color:var(--text-sub)">${created}</td>
+      <td><span class="badge ${statusBadge}">${r.status}</span>
+        ${r.status === '却下' && r.reject_reason ? `<div style="font-size:11px;color:var(--danger);margin-top:2px">却下理由: ${r.reject_reason}</div>` : ''}
+      </td>
+      <td>${r.status === '申請中' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="cancelSpecialLeave('${r.id}')">取消</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function cancelSpecialLeave(id) {
+  await apiDelete(`leave_requests?id=eq.${id}`);
+  specialRequests = specialRequests.filter(r => r.id !== id);
+  renderSpecialRequests();
+  toast('申請を取り消しました');
+}
+
+function openSpecialLeaveModal() {
+  document.getElementById('special-type').value = '';
+  document.getElementById('special-start').value = '';
+  document.getElementById('special-end').value = '';
+  document.getElementById('special-start-time').value = '';
+  document.getElementById('special-end-time').value = '';
+  document.getElementById('special-break').value = '0';
+  document.getElementById('special-reason').value = '';
+  document.getElementById('special-ikuji-type').value = '終日';
+  document.getElementById('special-ikuji-type-group').style.display = 'none';
+  document.getElementById('special-time-group').style.display = 'none';
+  document.getElementById('special-days-group').style.display = 'none';
+  document.getElementById('special-calc-result').style.display = 'none';
+  document.getElementById('special-reason-label').textContent = '備考';
+  document.getElementById('special-reason').placeholder = '';
+  openModal('special-leave-modal');
+}
+
+function onSpecialTypeChange() {
+  const type = document.getElementById('special-type').value;
+  const cfg = SPECIAL_TYPES[type];
+  if (!cfg) return;
+
+  const daysGroup = document.getElementById('special-days-group');
+  const daysInput = document.getElementById('special-days-input');
+  const daysHint = document.getElementById('special-days-hint');
+  const daysLabel = document.getElementById('special-days-label');
+  const ikujiGroup = document.getElementById('special-ikuji-type-group');
+  const reasonLabel = document.getElementById('special-reason-label');
+  const reasonInput = document.getElementById('special-reason');
+  const calcResult = document.getElementById('special-calc-result');
+
+  // 慶弔・感染症：日数自動設定
+  if (cfg.days !== null && !cfg.ikuji) {
+    daysGroup.style.display = 'block';
+    daysInput.value = cfg.days;
+    daysInput.readOnly = true;
+    daysInput.style.background = 'var(--surface2)';
+    daysHint.textContent = `${cfg.label}は${cfg.days}日付与されます`;
+    daysLabel.textContent = '付与日数';
+    ikujiGroup.style.display = 'none';
+    document.getElementById('special-time-group').style.display = 'none';
+  }
+
+  // 育児介護
+  if (cfg.ikuji) {
+    daysGroup.style.display = 'none';
+    ikujiGroup.style.display = 'block';
+    onSpecialIkujiTypeChange();
+  }
+
+  // 手動入力（裁判員・その他）
+  if (cfg.manual) {
+    daysGroup.style.display = 'block';
+    daysInput.value = '';
+    daysInput.readOnly = false;
+    daysInput.style.background = '';
+    daysHint.textContent = '取得する日数を入力してください';
+    daysLabel.textContent = '取得日数 *';
+    ikujiGroup.style.display = 'none';
+    document.getElementById('special-time-group').style.display = 'none';
+  }
+
+  // その他：備考必須
+  if (cfg.needReason) {
+    reasonLabel.textContent = '備考（必須）';
+    reasonInput.placeholder = '理由を入力してください';
+  } else {
+    reasonLabel.textContent = '備考';
+    reasonInput.placeholder = '';
+  }
+
+  calcResult.style.display = 'none';
+}
+
+function onSpecialIkujiTypeChange() {
+  const type = document.getElementById('special-ikuji-type').value;
+  const timeGroup = document.getElementById('special-time-group');
+  const daysGroup = document.getElementById('special-days-group');
+  const daysInput = document.getElementById('special-days-input');
+  const daysHint = document.getElementById('special-days-hint');
+
+  if (type === '時間') {
+    timeGroup.style.display = 'block';
+    daysGroup.style.display = 'none';
+  } else {
+    timeGroup.style.display = 'none';
+    daysGroup.style.display = 'block';
+    daysInput.readOnly = false;
+    daysInput.style.background = '';
+    daysInput.value = '';
+    daysHint.textContent = '年間5日まで取得できます';
+    document.getElementById('special-days-label').textContent = '取得日数 *';
+  }
+}
+
+async function calcSpecialDays() {
+  const type = document.getElementById('special-type').value;
+  const cfg = SPECIAL_TYPES[type];
+  if (!cfg || !cfg.ikuji) return;
+
+  const ikujiType = document.getElementById('special-ikuji-type').value;
+  const start = document.getElementById('special-start').value;
+  const resultEl = document.getElementById('special-calc-result');
+  if (!start) { resultEl.style.display = 'none'; return; }
+
+  if (ikujiType === '時間') {
+    const st = document.getElementById('special-start-time').value;
+    const et = document.getElementById('special-end-time').value;
+    if (!st || !et) { resultEl.style.display = 'none'; return; }
+    const [sh,sm] = st.split(':').map(Number);
+    const [eh,em] = et.split(':').map(Number);
+    const breakH = parseFloat(document.getElementById('special-break').value || 0);
+    const hours = ((eh * 60 + em) - (sh * 60 + sm)) / 60 - breakH;
+    if (hours <= 0) { resultEl.style.display = 'none'; return; }
+
+    // 年間上限チェック（4/26〜翌4/25、5日分）
+    const maxHours = (currentUser.daily_work_hours || 8) * 5;
+    const usedHours = await calcUsedIkujiHours(start);
+    resultEl.style.display = 'block';
+    resultEl.style.background = (usedHours + hours > maxHours) ? 'var(--danger-light)' : 'var(--primary-light)';
+    resultEl.style.borderColor = (usedHours + hours > maxHours) ? '#FECACA' : '#BFDBFE';
+    resultEl.style.color = (usedHours + hours > maxHours) ? 'var(--danger)' : '#1E40AF';
+    resultEl.innerHTML = `申請時間：<strong>${hours}時間</strong>（休憩${breakH}時間除く）<br>
+      <span style="font-size:12px">今年度の育児介護取得：${usedHours}時間使用 / 上限${maxHours}時間</span>`;
+  }
+}
+
+async function calcUsedIkujiHours(baseDate) {
+  const { yearStart, yearEnd } = getHourlyYearRange(baseDate);
+  const rows = await apiGet(`leave_requests?employee_id=eq.${currentUser.id}&leave_type=eq.特別休暇&leave_subtype=eq.育児介護&status=neq.却下&select=*`) || [];
+  return rows.reduce((s, r) => {
+    const d = new Date(r.start_date);
+    if (d >= yearStart && d <= yearEnd && r.total_hours) return s + parseFloat(r.total_hours);
+    return s;
+  }, 0);
+}
+
+async function calcUsedIkujiDays(baseDate) {
+  const { yearStart, yearEnd } = getHourlyYearRange(baseDate);
+  const rows = await apiGet(`leave_requests?employee_id=eq.${currentUser.id}&leave_type=eq.特別休暇&leave_subtype=eq.育児介護&status=neq.却下&select=*`) || [];
+  return rows.reduce((s, r) => {
+    const d = new Date(r.start_date);
+    if (d >= yearStart && d <= yearEnd && r.total_days) return s + parseFloat(r.total_days);
+    return s;
+  }, 0);
+}
+
+async function submitSpecialLeave() {
+  const type = document.getElementById('special-type').value;
+  const cfg = SPECIAL_TYPES[type];
+  if (!type || !cfg) { toast('種別を選択してください', 'error'); return; }
+
+  const start = document.getElementById('special-start').value;
+  if (!start) { toast('開始日を入力してください', 'error'); return; }
+
+  const reason = document.getElementById('special-reason').value.trim();
+  if (cfg.needReason && !reason) { toast('備考（理由）を入力してください', 'error'); return; }
+
+  const officerEmpS = employees.find(e => e.role === '役員');
+  const officerIdS = officerEmpS ? officerEmpS.id : null;
+  const isApproverSelfS = currentUser.role === '承認者';
+
+  let body = {
+    employee_id: currentUser.id,
+    leave_type: '特別休暇',
+    leave_subtype: type,
+    start_date: start,
+    reason,
+    status: '申請中',
+    approver_id: isApproverSelfS ? null : (currentUser.approver_id || null),
+    officer_id: officerIdS
+  };
+
+  if (cfg.ikuji) {
+    const ikujiType = document.getElementById('special-ikuji-type').value;
+    const maxDays = 5;
+
+    if (ikujiType === '時間') {
+      const st = document.getElementById('special-start-time').value;
+      const et = document.getElementById('special-end-time').value;
+      const breakH = parseFloat(document.getElementById('special-break').value || 0);
+      if (!st || !et) { toast('時刻を入力してください', 'error'); return; }
+      const [sh,sm] = st.split(':').map(Number);
+      const [eh,em] = et.split(':').map(Number);
+      const hours = ((eh * 60 + em) - (sh * 60 + sm)) / 60 - breakH;
+      if (hours <= 0) { toast('取得時間が0以下です', 'error'); return; }
+      const maxHours = (currentUser.daily_work_hours || 8) * maxDays;
+      const usedHours = await calcUsedIkujiHours(start);
+      if (usedHours + hours > maxHours) {
+        body.over_limit = true;
+        body.over_limit_note = `育児介護時間取得年間上限超過（上限${maxHours}時間、使用済${usedHours}時間、今回${hours}時間）`;
+      }
+      body.end_date = start;
+      body.start_time = st;
+      body.end_time = et;
+      body.total_hours = hours;
+    } else {
+      const days = parseFloat(document.getElementById('special-days-input').value);
+      if (isNaN(days) || days <= 0) { toast('取得日数を入力してください', 'error'); return; }
+      const usedDays = await calcUsedIkujiDays(start);
+      if (usedDays + days > maxDays) {
+        body.over_limit = true;
+        body.over_limit_note = `育児介護終日取得年間上限超過（上限${maxDays}日、使用済${usedDays}日、今回${days}日）`;
+      }
+      const end = document.getElementById('special-end').value || start;
+      body.end_date = end;
+      body.total_days = days;
+    }
+  } else if (cfg.days !== null) {
+    // 自動日数
+    const end = document.getElementById('special-end').value || start;
+    body.end_date = end;
+    body.total_days = cfg.days;
+  } else {
+    // 手動入力
+    const days = parseFloat(document.getElementById('special-days-input').value);
+    if (isNaN(days) || days <= 0) { toast('取得日数を入力してください', 'error'); return; }
+    const end = document.getElementById('special-end').value || start;
+    body.end_date = end;
+    body.total_days = days;
+  }
+
+  try {
+    const res = await apiPost('leave_requests', body);
+    if (res && res[0]) specialRequests.unshift(res[0]);
+    renderSpecialRequests();
+    closeModal('special-leave-modal');
+    toast('特別休暇を申請しました');
+  } catch(e) {
+    toast('申請に失敗しました: ' + e.message, 'error');
+  }
+}
+
+
+// ===== 休日出勤 =====
+let holidayWorkRequests = [];
+let hwTimes = [{ start: '', end: '', breakH: 0 }];
+
+async function loadHolidayWorkPage() {
+  try {
+    const rows = await apiGet(`holiday_work_requests?employee_id=eq.${currentUser.id}&order=created_at.desc&select=*`);
+    holidayWorkRequests = rows || [];
+    renderHolidayWorkList();
+  } catch(e) {}
+}
+
+function renderHolidayWorkList() {
+  const tbody = document.getElementById('holiday-work-tbody');
+  if (!tbody) return;
+  if (holidayWorkRequests.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請履歴がありません</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = holidayWorkRequests.map(r => {
+    const statusBadge = r.status === '承認済' ? 'badge-green' : r.status === '却下' ? 'badge-red' : r.status === '承認者承認済' ? 'badge-blue' : 'badge-yellow';
+    const created = (r.created_at||'').slice(0,10);
+    return `<tr>
+      <td style="font-weight:500">${r.work_date}</td>
+      <td style="font-size:12px">${r.start_time}～${r.end_time}</td>
+      <td>${r.actual_hours}時間</td>
+      <td style="color:var(--text-sub);font-size:12px">${r.reason}</td>
+      <td style="color:var(--text-sub)">${created}</td>
+      <td><span class="badge ${statusBadge}">${r.status}</span>
+        ${r.status === '却下' && r.reject_reason ? `<div style="font-size:11px;color:var(--danger)">却下: ${r.reject_reason}</div>` : ''}
+      </td>
+      <td>${r.status === '申請中' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="cancelHolidayWork('${r.id}')">取消</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function cancelHolidayWork(id) {
+  await apiDelete(`holiday_work_requests?id=eq.${id}`);
+  holidayWorkRequests = holidayWorkRequests.filter(r => r.id !== id);
+  renderHolidayWorkList();
+  toast('申請を取り消しました');
+}
+
+function openHolidayWorkModal() {
+  document.getElementById('hw-date').value = '';
+  document.getElementById('hw-reason').value = '';
+  document.getElementById('hw-calc-result').style.display = 'none';
+  hwTimes = [{ start: '', end: '', breakH: 0 }];
+  renderHwTimes();
+  openModal('holiday-work-modal');
+}
+
+function renderHwTimes() {
+  const el = document.getElementById('hw-times-container');
+  if (!el) return;
+  el.innerHTML = hwTimes.map((t, i) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px">
+      ${hwTimes.length > 1 ? `<div style="font-size:12px;color:var(--text-sub);margin-bottom:8px">${i+1}回目</div>` : ''}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">出勤時刻</label>
+          <input type="time" class="form-input" value="${t.start}"
+            onchange="hwTimes[${i}].start = this.value; calcHwTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">退勤時刻</label>
+          <input type="time" class="form-input" value="${t.end}"
+            onchange="hwTimes[${i}].end = this.value; calcHwTotal()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">休憩時間（時間）</label>
+        <input type="number" class="form-input" step="0.5" min="0" max="8" value="${t.breakH}"
+          onchange="hwTimes[${i}].breakH = parseFloat(this.value)||0; calcHwTotal()">
+      </div>
+      ${hwTimes.length > 1 ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-top:4px" onclick="removeHwTime(${i})">この時間帯を削除</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function addHwTime() {
+  hwTimes.push({ start: '', end: '', breakH: 0 });
+  renderHwTimes();
+}
+
+function removeHwTime(i) {
+  hwTimes.splice(i, 1);
+  renderHwTimes();
+  calcHwTotal();
+}
+
+function calcHwTotal() {
+  let total = 0;
+  for (const t of hwTimes) {
+    if (!t.start || !t.end) continue;
+    const [sh,sm] = t.start.split(':').map(Number);
+    const [eh,em] = t.end.split(':').map(Number);
+    const h = ((eh * 60 + em) - (sh * 60 + sm)) / 60 - (t.breakH || 0);
+    if (h > 0) total += h;
+  }
+  const el = document.getElementById('hw-calc-result');
+  if (total > 0) {
+    el.style.display = 'block';
+    el.textContent = `実働時間合計：${total.toFixed(1)}時間`;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+async function submitHolidayWork() {
+  const date = document.getElementById('hw-date').value;
+  const reason = document.getElementById('hw-reason').value.trim();
+  if (!date) { toast('出勤日を入力してください', 'error'); return; }
+  if (!reason) { toast('理由を入力してください', 'error'); return; }
+
+  let totalHours = 0;
+  const timeEntries = [];
+  for (const t of hwTimes) {
+    if (!t.start || !t.end) continue;
+    const [sh,sm] = t.start.split(':').map(Number);
+    const [eh,em] = t.end.split(':').map(Number);
+    const h = ((eh * 60 + em) - (sh * 60 + sm)) / 60 - (t.breakH || 0);
+    if (h > 0) { totalHours += h; timeEntries.push(t); }
+  }
+  if (timeEntries.length === 0) { toast('出退勤時刻を入力してください', 'error'); return; }
+
+  const officerEmp = employees.find(e => e.role === '役員');
+  const isApproverSelf = currentUser.role === '承認者';
+
+  // 複数時間帯は最初のstart〜最後のendで記録、実働時間を合計
+  const firstEntry = timeEntries[0];
+  const lastEntry = timeEntries[timeEntries.length - 1];
+
+  try {
+    const res = await apiPost('holiday_work_requests', {
+      employee_id: currentUser.id,
+      work_date: date,
+      start_time: firstEntry.start,
+      end_time: lastEntry.end,
+      actual_hours: totalHours,
+      reason,
+      status: '申請中',
+      approver_id: isApproverSelf ? null : (currentUser.approver_id || null),
+      officer_id: officerEmp ? officerEmp.id : null
+    });
+    if (res && res[0]) holidayWorkRequests.unshift(res[0]);
+    renderHolidayWorkList();
+    closeModal('holiday-work-modal');
+    toast('休日出勤を申請しました');
+  } catch(e) {
+    toast('申請に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// ===== TOAST =====
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+</script>
+</body>
+</html>
