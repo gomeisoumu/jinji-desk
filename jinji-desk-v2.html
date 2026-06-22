@@ -2170,13 +2170,27 @@ async function submitLeave() {
 // ===== 承認管理 =====
 async function loadApproveList() {
   try {
-    let query = 'leave_requests?select=*&order=created_at.desc';
-    if (currentUser.role === '承認者') {
-      // 承認者は自分が承認者の申請のみ
-      query += `&approver_id=eq.${currentUser.id}`;
+    if (employees.length === 0) {
+      employees = await apiGet('employees?select=*&order=employee_number.asc') || [];
     }
-    // 役員・総務部は全申請を見る
-    approveRequests = await apiGet(query) || [];
+    // 有休・特別休暇申請
+    let leaveQuery = 'leave_requests?select=*&order=created_at.desc';
+    if (currentUser.role === '承認者') {
+      leaveQuery += `&approver_id=eq.${currentUser.id}`;
+    }
+    const leaveRows = await apiGet(leaveQuery) || [];
+
+    // 休日出勤申請
+    let hwQuery = 'holiday_work_requests?select=*&order=created_at.desc';
+    if (currentUser.role === '承認者') {
+      hwQuery += `&approver_id=eq.${currentUser.id}`;
+    }
+    const hwRows = await apiGet(hwQuery) || [];
+
+    // 種別フラグをつけてマージ・日付降順ソート
+    const leave = leaveRows.map(r => ({ ...r, _type: 'leave' }));
+    const hw = hwRows.map(r => ({ ...r, _type: 'holiday_work' }));
+    approveRequests = [...leave, ...hw].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
     renderApproveTable();
   } catch(e) {
     toast('データの読み込みに失敗しました', 'error');
@@ -2199,12 +2213,7 @@ function renderApproveTable() {
     const emp = employees.find(e => e.id === r.employee_id);
     const empName = emp ? emp.name : '不明';
     const statusBadge = r.status === '承認済' ? 'badge-green' : r.status === '却下' ? 'badge-red' : r.status === '承認者承認済' ? 'badge-blue' : 'badge-yellow';
-    const period = r.leave_subtype === '時間'
-      ? `${r.start_date} ${r.start_time||''} ～ ${r.end_time||''}`
-      : r.start_date === r.end_date ? r.start_date : `${r.start_date} ～ ${r.end_date}`;
-    const days = r.leave_subtype === '時間' ? `${r.total_hours}時間` : `${r.total_days}日`;
     const created = (r.created_at||'').slice(0,10);
-    const overLimitBadge = r.over_limit ? '<span class="badge badge-yellow" style="margin-left:4px">⚠️ 上限超過</span>' : '';
     const isOfficer = currentUser.role === '役員' || currentUser.role === '総務部';
     const isApprover = currentUser.role === '承認者';
     const canApprove1 = isApprover && r.status === '申請中' && r.approver_id === currentUser.id;
@@ -2213,18 +2222,33 @@ function renderApproveTable() {
     const approveLabel = canApprove2 ? '最終承認' : '承認';
     const actions = canAct ? `
       <div class="action-row">
-        <button class="btn btn-primary btn-sm" onclick="doApprove('${r.id}')">${approveLabel}</button>
-        <button class="btn btn-danger btn-sm" onclick="openRejectModal('${r.id}')">却下</button>
+        <button class="btn btn-primary btn-sm" onclick="doApproveRequest('${r.id}','${r._type}')">${approveLabel}</button>
+        <button class="btn btn-danger btn-sm" onclick="openRejectModal('${r.id}','${r._type}')">却下</button>
       </div>` :
       r.status === '申請中' ? '<span style="color:var(--text-hint);font-size:12px">承認者の承認待ち</span>' :
       r.status === '承認者承認済' ? '<span style="color:var(--text-hint);font-size:12px">役員の承認待ち</span>' :
       `<span style="color:var(--text-hint);font-size:12px">${r.reject_reason ? '理由: ' + r.reject_reason : '—'}</span>`;
 
+    // 種別ごとの表示
+    let typeLabel, periodStr, amountStr;
+    if (r._type === 'holiday_work') {
+      typeLabel = '休日出勤';
+      periodStr = `${r.work_date} ${r.start_time}～${r.end_time}`;
+      amountStr = `${r.actual_hours}時間`;
+    } else {
+      const overLimitBadge = r.over_limit ? '<span class="badge badge-yellow" style="margin-left:4px">⚠️ 上限超過</span>' : '';
+      typeLabel = r.leave_type === '有給休暇' ? `有給（${r.leave_subtype}）${overLimitBadge}` : `特別休暇（${r.leave_subtype}）`;
+      periodStr = r.leave_subtype === '時間'
+        ? `${r.start_date} ${r.start_time||''} ～ ${r.end_time||''}`
+        : r.start_date === r.end_date ? r.start_date : `${r.start_date} ～ ${r.end_date}`;
+      amountStr = r.leave_subtype === '時間' ? `${r.total_hours}時間` : `${r.total_days}日`;
+    }
+
     return `<tr>
       <td style="font-weight:500">${empName}</td>
-      <td>有給（${r.leave_subtype}）${overLimitBadge}</td>
-      <td>${period}</td>
-      <td>${days}</td>
+      <td>${typeLabel}</td>
+      <td>${periodStr}</td>
+      <td>${amountStr}</td>
       <td style="color:var(--text-sub)">${created}</td>
       <td><span class="badge ${statusBadge}">${r.status}</span></td>
       <td>${actions}</td>
@@ -2287,8 +2311,10 @@ async function doApprove(id) {
   toast(newStatus === '承認済' ? '最終承認しました' : '1段階目の承認をしました');
 }
 
-function openRejectModal(id) {
+let rejectTargetType = 'leave';
+function openRejectModal(id, type) {
   rejectTargetId = id;
+  rejectTargetType = type || 'leave';
   document.getElementById('reject-reason-input').value = '';
   openModal('reject-modal');
 }
@@ -2296,8 +2322,8 @@ function openRejectModal(id) {
 async function doReject() {
   const reason = document.getElementById('reject-reason-input').value.trim();
   if (!reason) { toast('却下理由を入力してください', 'error'); return; }
-
-  await apiPatch(`leave_requests?id=eq.${rejectTargetId}`, { status: '却下', reject_reason: reason, approver_id: currentUser.id, updated_at: new Date().toISOString() });
+  const table = rejectTargetType === 'holiday_work' ? 'holiday_work_requests' : 'leave_requests';
+  await apiPatch(`${table}?id=eq.${rejectTargetId}`, { status: '却下', reject_reason: reason, updated_at: new Date().toISOString() });
   const idx = approveRequests.findIndex(r => r.id === rejectTargetId);
   if (idx >= 0) { approveRequests[idx].status = '却下'; approveRequests[idx].reject_reason = reason; }
   closeModal('reject-modal');
