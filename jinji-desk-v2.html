@@ -2792,6 +2792,7 @@ function initAttendancePage() {
   const isApproverOrOfficer = currentUser.role === '承認者' || currentUser.role === '役員';
   if (isApproverOrOfficer) {
     buildSubNav('attendance-sub-nav', 'attendance-sub-content', [
+      { id: 'sub-leave-balance', label: '有休残高', fn: loadBalanceList },
       { id: 'sub-tc-list', label: 'タイムカード一覧', fn: loadTcList }
     ]);
   } else if (isSoumu) {
