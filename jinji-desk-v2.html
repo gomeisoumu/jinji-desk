@@ -684,6 +684,55 @@
     border-radius: var(--radius-sm);
   }
 
+  /* ===== APPROVE CARDS ===== */
+  .approve-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .approve-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .approve-card-name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .approve-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .approve-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 2px;
+  }
+  .approve-card-value {
+    color: var(--text);
+  }
+  .approve-card-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .approve-card-note {
+    font-size: 12px;
+    color: var(--text-hint);
+    padding: 6px 0;
+  }
+
   @media (max-width: 768px) {
     .topbar { padding: 0 16px; }
     .nav-tabs { display: none; }
@@ -769,6 +818,10 @@
     <div class="form-group">
       <label class="form-label">パスワード</label>
       <input type="password" id="login-pw" class="form-input" autocomplete="off">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+      <input type="checkbox" id="save-login" style="width:16px;height:16px;cursor:pointer">
+      <label for="save-login" style="font-size:13px;color:var(--text-sub);cursor:pointer">ログイン情報を保存する</label>
     </div>
     <div id="login-error" class="error-msg">社員番号またはパスワードが正しくありません</div>
     <button class="btn btn-primary" id="login-btn" onclick="doLogin()" style="margin-top:20px">
@@ -964,17 +1017,17 @@
           <option value="承認済">承認済</option><option value="却下">却下</option>
         </select>
       </div>
-      <div class="search-bar" style="margin-bottom:16px">
+      <div style="margin-bottom:16px;display:flex;flex-direction:column;gap:10px">
         <input type="text" class="search-input" id="approve-search" placeholder="社員名で検索..." oninput="renderApproveTable()">
-        <input type="date" id="approve-date-from" class="form-input" onchange="renderApproveTable()" style="width:auto" title="開始日">
-        <span style="color:var(--text-sub);padding:0 4px">〜</span>
-        <input type="date" id="approve-date-to" class="form-input" onchange="renderApproveTable()" style="width:auto" title="終了日">
-        <button class="btn btn-ghost btn-sm" onclick="clearApproveSearch()">クリア</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="date" id="approve-date-from" class="form-input" onchange="renderApproveTable()" style="flex:1;min-width:130px" placeholder="開始日">
+          <span style="color:var(--text-sub)">〜</span>
+          <input type="date" id="approve-date-to" class="form-input" onchange="renderApproveTable()" style="flex:1;min-width:130px" placeholder="終了日">
+          <button class="btn btn-ghost btn-sm" onclick="clearApproveSearch()">クリア</button>
+        </div>
       </div>
-      <div class="card">
-        <table><thead><tr><th>申請者</th><th>種別</th><th>期間</th><th>日数</th><th>申請日</th><th>状態</th><th></th></tr></thead>
-        <tbody id="approve-tbody"><tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr></tbody>
-        </table>
+      <div id="approve-tbody">
+        <div class="empty-state"><p>申請がありません</p></div>
       </div>
     </div>
 
@@ -1474,6 +1527,19 @@
 const SUPABASE_URL = 'https://zpgjygjpzvdjbfmalmco.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZ2p5Z2pwenZkamJmbWFsbWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODk4OTksImV4cCI6MjA5NzE2NTg5OX0.rZIBjPmeX7J66irNwdm4-p7PuoUc5wBoaCd5uNYoAI0';
 
+// 保存済みログイン情報を読み込む
+(function loadSavedLogin() {
+  try {
+    const saved = localStorage.getItem('jinji_login');
+    if (saved) {
+      const { id, pw } = JSON.parse(saved);
+      document.getElementById('login-id').value = id || '';
+      document.getElementById('login-pw').value = pw || '';
+      document.getElementById('save-login').checked = true;
+    }
+  } catch(e) {}
+})();
+
 // ===== API =====
 async function api(method, path, body) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -1529,6 +1595,13 @@ async function doLogin() {
     if (!rows || rows.length === 0) throw new Error('not found');
 
     const emp = rows[0];
+
+    // ログイン情報を保存
+    if (document.getElementById('save-login').checked) {
+      localStorage.setItem('jinji_login', JSON.stringify({ id: num, pw }));
+    } else {
+      localStorage.removeItem('jinji_login');
+    }
 
     // 初回ログイン判定
     if (emp.is_first_login) {
@@ -2242,7 +2315,7 @@ function renderApproveTable() {
   });
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr>';
+    tbody.innerHTML = '<div class="empty-state" style="padding:60px"><p>申請がありません</p></div>';
     return;
   }
 
@@ -2281,15 +2354,49 @@ function renderApproveTable() {
       amountStr = r.leave_subtype === '時間' ? `${r.total_hours}時間` : `${r.total_days}日`;
     }
 
-    return `<tr>
-      <td style="font-weight:500">${empName}</td>
-      <td>${typeLabel}</td>
-      <td>${periodStr}</td>
-      <td>${amountStr}</td>
-      <td style="color:var(--text-sub)">${created}</td>
-      <td><span class="badge ${statusBadge}">${r.status}</span></td>
-      <td>${actions}</td>
-    </tr>`;
+    const rejectInfo = r.reject_reason ? `<div style="font-size:12px;color:var(--danger);margin-top:4px">却下理由: ${r.reject_reason}</div>` : '';
+    return `
+      <div class="approve-card">
+        <div class="approve-card-header">
+          <div>
+            <div class="approve-card-name">${empName}</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-top:2px">${typeLabel}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge ${statusBadge}">${r.status}</span>
+            ${r.over_limit ? '<span class="badge badge-yellow">⚠️ 上限超過</span>' : ''}
+          </div>
+        </div>
+        <div class="approve-card-body">
+          <div>
+            <div class="approve-card-label">期間</div>
+            <div class="approve-card-value">${periodStr}</div>
+          </div>
+          <div>
+            <div class="approve-card-label">日数・時間</div>
+            <div class="approve-card-value">${amountStr}</div>
+          </div>
+          <div>
+            <div class="approve-card-label">申請日</div>
+            <div class="approve-card-value">${created}</div>
+          </div>
+          ${r.reason ? `<div>
+            <div class="approve-card-label">備考</div>
+            <div class="approve-card-value" style="font-size:12px">${r.reason}</div>
+          </div>` : ''}
+        </div>
+        ${rejectInfo}
+        <div class="approve-card-footer">
+          ${canAct ? `
+            <button class="btn btn-primary btn-sm" onclick="doApproveRequest('${r.id}','${r._type}')">${approveLabel}</button>
+            <button class="btn btn-danger btn-sm" onclick="openRejectModal('${r.id}','${r._type}')">却下</button>
+          ` : `<div class="approve-card-note">${
+            r.status === '申請中' ? '承認者の承認待ち' :
+            r.status === '承認者承認済' ? '役員の承認待ち' : ''
+          }</div>`}
+        </div>
+      </div>
+    `;
   }).join('');
 }
 
@@ -2681,7 +2788,7 @@ function renderAllRequests() {
   });
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr>';
+    tbody.innerHTML = '<div class="empty-state" style="padding:60px"><p>申請がありません</p></div>';
     return;
   }
 
