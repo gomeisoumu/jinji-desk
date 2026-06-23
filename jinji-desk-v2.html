@@ -2406,22 +2406,43 @@ function renderPatternsList() {
         <td style="font-size:11px;color:var(--text-hint)">${i === steps.length - 1 ? '← 以降この日数で固定' : ''}</td>
       </tr>
     `).join('');
+    const firstStep = steps[0];
+    const lastStep = steps[steps.length - 1];
+    const summary = steps.length > 0 ? `初回${firstStep.days}日 / 最終${lastStep.days}日 （${steps.length}ステップ）` : 'ステップなし';
     return `
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <div class="card-title">${p.name}</div>
-          <div class="action-row">
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-header" style="cursor:pointer" onclick="togglePattern('pattern-body-${p.id}', this)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:13px;color:var(--text-sub);transition:transform 0.2s" id="pattern-arrow-${p.id}">▶</span>
+            <div>
+              <div class="card-title">${p.name}</div>
+              <div style="font-size:12px;color:var(--text-sub);margin-top:2px">${summary}</div>
+            </div>
+          </div>
+          <div class="action-row" onclick="event.stopPropagation()">
             <button class="btn btn-ghost btn-sm" onclick="openEditPattern('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePattern('${p.id}')">削除</button>
           </div>
         </div>
-        <table>
-          <thead><tr><th>回次</th><th>タイミング</th><th>付与日数</th><th></th></tr></thead>
-          <tbody>${stepsHtml || '<tr><td colspan="4" style="color:var(--text-hint);padding:16px">ステップなし</td></tr>'}</tbody>
-        </table>
+        <div id="pattern-body-${p.id}" style="display:none">
+          <table>
+            <thead><tr><th>回次</th><th>タイミング</th><th>付与日数</th><th></th></tr></thead>
+            <tbody>${stepsHtml || '<tr><td colspan="4" style="color:var(--text-hint);padding:16px">ステップなし</td></tr>'}</tbody>
+          </table>
+        </div>
       </div>
     `;
   }).join('');
+}
+
+function togglePattern(bodyId, header) {
+  const body = document.getElementById(bodyId);
+  const arrowId = bodyId.replace('pattern-body-', 'pattern-arrow-');
+  const arrow = document.getElementById(arrowId);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 
 function fillPatternSelect() {
@@ -2636,8 +2657,19 @@ async function loadAllRequests() {
 function renderAllRequests() {
   const tbody = document.getElementById('all-requests-tbody');
   if (!tbody) return;
-  const filter = document.getElementById('all-req-filter').value;
-  const q = document.getElementById('all-req-search').value.toLowerCase();
+  const filterEl = document.getElementById('all-req-filter');
+  const searchEl = document.getElementById('all-req-search');
+  const filter = filterEl ? filterEl.value : '';
+  const q = searchEl ? searchEl.value.toLowerCase() : '';
+
+  // employeesが未ロードなら読み込む
+  if (employees.length === 0) {
+    apiGet('employees?select=*&order=employee_number.asc').then(rows => {
+      employees = rows || [];
+      renderAllRequests();
+    });
+    return;
+  }
 
   let list = allRequests;
   if (filter) list = list.filter(r => r.status === filter);
