@@ -958,8 +958,16 @@
         <div><div class="page-title">承認管理</div><div class="page-subtitle">申請の承認・却下</div></div>
         <select class="form-input" id="approve-filter" onchange="renderApproveTable()" style="width:auto;padding:8px 14px">
           <option value="申請中">申請中のみ</option><option value="">すべて</option>
+          <option value="承認者承認済">承認者承認済</option>
           <option value="承認済">承認済</option><option value="却下">却下</option>
         </select>
+      </div>
+      <div class="search-bar" style="margin-bottom:16px">
+        <input type="text" class="search-input" id="approve-search" placeholder="社員名で検索..." oninput="renderApproveTable()">
+        <input type="date" id="approve-date-from" class="form-input" onchange="renderApproveTable()" style="width:auto" title="開始日">
+        <span style="color:var(--text-sub);padding:0 4px">〜</span>
+        <input type="date" id="approve-date-to" class="form-input" onchange="renderApproveTable()" style="width:auto" title="終了日">
+        <button class="btn btn-ghost btn-sm" onclick="clearApproveSearch()">クリア</button>
       </div>
       <div class="card">
         <table><thead><tr><th>申請者</th><th>種別</th><th>期間</th><th>日数</th><th>申請日</th><th>状態</th><th></th></tr></thead>
@@ -1591,9 +1599,10 @@ function showApp() {
   document.getElementById('dash-title').textContent = `こんにちは、${currentUser.name}さん`;
   document.getElementById('dash-subtitle').textContent = `${currentUser.role} · ${currentUser.department || ''}`;
   if (currentUser.role === '総務部') {
-    showPage('employees');
-    loadEmployees();
+    showPage('home');
+    loadMyDashboard();
     loadPatterns();
+    loadEmployees();
   } else {
     showPage('home');
     (async () => {
@@ -1616,18 +1625,28 @@ function buildNav() {
   const tabs = document.getElementById('nav-tabs');
   tabs.innerHTML = '';
   const isSoumu = currentUser.role === '総務部';
-  const isApprover = ['承認者', '役員', '総務部'].includes(currentUser.role);
+  const isOfficer = currentUser.role === '役員';
+  const isApprover = currentUser.role === '承認者';
+  const isApproverOrAbove = ['承認者', '役員', '総務部'].includes(currentUser.role);
   const useTC = currentUser.use_timecard;
 
   const pages = [];
-  if (isSoumu) pages.push({ id: 'employees', label: '社員管理', fn: () => loadEmployees() });
   pages.push({ id: 'home', label: 'ホーム', fn: () => loadMyDashboard() });
-  pages.push({ id: 'leave', label: '休暇管理', fn: () => initLeavePage() });
-  if (useTC) pages.push({ id: 'timecard', label: 'タイムカード', fn: () => initTimecardPage() });
-  if (isApprover) pages.push({ id: 'approve', label: '承認管理', fn: () => loadApproveList() });
-  if (currentUser.role === '承認者' || currentUser.role === '役員') pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
+
   if (isSoumu) {
-    pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
+    pages.push({ id: 'employees', label: '社員管理', fn: () => loadEmployees() });
+  }
+
+  // 休暇管理：役員・総務部以外のみ
+  if (!isOfficer && !isSoumu) {
+    pages.push({ id: 'leave', label: '休暇管理', fn: () => initLeavePage() });
+  }
+
+  if (useTC) pages.push({ id: 'timecard', label: 'タイムカード', fn: () => initTimecardPage() });
+  if (isApproverOrAbove) pages.push({ id: 'approve', label: '承認管理', fn: () => loadApproveList() });
+  if (isApprover || isOfficer || isSoumu) pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
+
+  if (isSoumu) {
     pages.push({ id: 'evaluation', label: '人事評価', fn: () => {} });
     pages.push({ id: 'settings', label: '設定', fn: () => initSettingsPage() });
   }
@@ -2201,8 +2220,24 @@ function renderApproveTable() {
   const tbody = document.getElementById('approve-tbody');
   const filter = document.getElementById('approve-filter').value;
 
+  const q = (document.getElementById('approve-search')?.value || '').toLowerCase();
+  const dateFrom = document.getElementById('approve-date-from')?.value || '';
+  const dateTo = document.getElementById('approve-date-to')?.value || '';
+
   let list = approveRequests;
   if (filter) list = list.filter(r => r.status === filter);
+  if (q) list = list.filter(r => {
+    const emp = employees.find(e => e.id === r.employee_id);
+    return emp && emp.name.toLowerCase().includes(q);
+  });
+  if (dateFrom) list = list.filter(r => {
+    const d = r.work_date || r.start_date;
+    return d && d >= dateFrom;
+  });
+  if (dateTo) list = list.filter(r => {
+    const d = r.work_date || r.end_date || r.start_date;
+    return d && d <= dateTo;
+  });
 
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>申請がありません</p></div></td></tr>';
@@ -2753,14 +2788,17 @@ function renderBalanceCardsTo(balances, targetId) {
 }
 
 function initAttendancePage() {
-  if (currentUser.role === '承認者' || currentUser.role === '役員') {
+  const isSoumu = currentUser.role === '総務部';
+  const isApproverOrOfficer = currentUser.role === '承認者' || currentUser.role === '役員';
+  if (isApproverOrOfficer) {
     buildSubNav('attendance-sub-nav', 'attendance-sub-content', [
       { id: 'sub-tc-list', label: 'タイムカード一覧', fn: loadTcList }
     ]);
-  } else {
+  } else if (isSoumu) {
     buildSubNav('attendance-sub-nav', 'attendance-sub-content', [
       { id: 'sub-leave-balance', label: '有休残高', fn: loadBalanceList },
-      { id: 'sub-tc-list', label: 'タイムカード一覧', fn: loadTcList }
+      { id: 'sub-tc-list', label: 'タイムカード一覧', fn: loadTcList },
+      { id: 'sub-all-requests', label: '全申請一覧', fn: loadAllRequests }
     ]);
   }
 }
@@ -2872,8 +2910,7 @@ async function openEmpTcDayEdit(dateStr) {
 
 function initSettingsPage() {
   buildSubNav('settings-sub-nav', 'settings-sub-content', [
-    { id: 'sub-patterns', label: '付与パターン', fn: () => { loadPatterns(); } },
-    { id: 'sub-all-requests', label: '全申請一覧', fn: loadAllRequests }
+    { id: 'sub-patterns', label: '付与パターン', fn: () => { loadPatterns(); } }
   ]);
 }
 
@@ -3808,6 +3845,16 @@ async function submitHolidayWork() {
   } catch(e) {
     toast('申請に失敗しました: ' + e.message, 'error');
   }
+}
+
+function clearApproveSearch() {
+  const s = document.getElementById('approve-search');
+  const f = document.getElementById('approve-date-from');
+  const t = document.getElementById('approve-date-to');
+  if (s) s.value = '';
+  if (f) f.value = '';
+  if (t) t.value = '';
+  renderApproveTable();
 }
 
 // ===== TOAST =====
