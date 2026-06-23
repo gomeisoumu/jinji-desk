@@ -2222,7 +2222,7 @@ function renderApproveTable() {
     const approveLabel = canApprove2 ? '最終承認' : '承認';
     const actions = canAct ? `
       <div class="action-row">
-        <button class="btn btn-primary btn-sm" onclick="doApprove('${r.id}')">${approveLabel}</button>
+        <button class="btn btn-primary btn-sm" onclick="doApproveRequest('${r.id}','${r._type}')">${approveLabel}</button>
         <button class="btn btn-danger btn-sm" onclick="openRejectModal('${r.id}','${r._type}')">却下</button>
       </div>` :
       r.status === '申請中' ? '<span style="color:var(--text-hint);font-size:12px">承認者の承認待ち</span>' :
@@ -2287,7 +2287,7 @@ async function doApprove(id) {
     return;
   }
 
-  await apiPatch(`leave_requests?id=eq.${id}`, updateBody);
+  await apiPatch(`${table}?id=eq.${id}`, updateBody);
 
   // 有休残高を減算（最終承認時のみ）
   if (newStatus === '承認済' && req.leave_type === '有給休暇') {
