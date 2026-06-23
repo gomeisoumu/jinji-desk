@@ -2256,32 +2256,26 @@ function renderApproveTable() {
   }).join('');
 }
 
-async function doApprove(id) {
+async function doApproveRequest(id, type) {
   const req = approveRequests.find(r => r.id === id);
   if (!req) return;
 
   const isOfficer = currentUser.role === '役員' || currentUser.role === '総務部';
   const isApprover = currentUser.role === '承認者';
+  const table = type === 'holiday_work' ? 'holiday_work_requests' : 'leave_requests';
 
   let newStatus = req.status;
   let updateBody = { updated_at: new Date().toISOString() };
 
   if (isApprover && req.status === '申請中') {
-    // 承認者が1段階目を承認
     newStatus = '承認者承認済';
     updateBody.status = newStatus;
     updateBody.approver_approved_at = new Date().toISOString();
-  } else if (isOfficer && (req.status === '承認者承認済' || req.approver_id === null)) {
-    // 役員が最終承認（承認者スキップ含む）
+  } else if (isOfficer && (req.status === '承認者承認済' || !req.approver_id)) {
     newStatus = '承認済';
     updateBody.status = newStatus;
     updateBody.officer_approved_at = new Date().toISOString();
     updateBody.officer_id = currentUser.id;
-  } else if (isOfficer && req.status === '申請中' && req.approver_id === null) {
-    // 承認者なし（承認者本人の申請）
-    newStatus = '承認済';
-    updateBody.status = newStatus;
-    updateBody.officer_approved_at = new Date().toISOString();
   } else {
     toast('この申請は現在あなたが承認できる状態ではありません', 'error');
     return;
@@ -2289,7 +2283,7 @@ async function doApprove(id) {
 
   await apiPatch(`${table}?id=eq.${id}`, updateBody);
 
-  // 有休残高を減算（最終承認時のみ）
+  // 有休残高を減算（最終承認・有給のみ）
   if (newStatus === '承認済' && req.leave_type === '有給休暇') {
     const balances = await apiGet(`paid_leave_balance?employee_id=eq.${req.employee_id}&order=expire_date.asc`);
     if (balances && balances.length > 0) {
@@ -2310,6 +2304,9 @@ async function doApprove(id) {
   renderApproveTable();
   toast(newStatus === '承認済' ? '最終承認しました' : '1段階目の承認をしました');
 }
+
+// 後方互換
+async function doApprove(id) { await doApproveRequest(id, 'leave'); }
 
 let rejectTargetType = 'leave';
 function openRejectModal(id, type) {
