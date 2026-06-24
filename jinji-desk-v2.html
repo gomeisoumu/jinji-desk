@@ -733,6 +733,42 @@
     padding: 6px 0;
   }
 
+  .avatar-color-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+  }
+  .avatar-color-btn:hover { transform: scale(1.1); }
+  .avatar-color-btn.selected { border-color: var(--text); transform: scale(1.1); }
+
+  /* ===== カスタム日付入力 ===== */
+  .date-input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .date-part {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    text-align: center;
+    padding: 10px 4px;
+    transition: border-color 0.15s;
+  }
+  .date-part:focus { border-color: var(--primary); }
+  .date-part.error { border-color: var(--danger); }
+  .date-part-y { width: 68px; }
+  .date-part-m { width: 44px; }
+  .date-part-d { width: 44px; }
+  .date-sep { color: var(--text-sub); font-size: 14px; padding: 0 1px; }
+
   @media (max-width: 768px) {
     .topbar { padding: 0 16px; }
     .nav-tabs { display: none; }
@@ -819,10 +855,6 @@
       <label class="form-label">パスワード</label>
       <input type="password" id="login-pw" class="form-input" autocomplete="off">
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-      <input type="checkbox" id="save-login" style="width:16px;height:16px;cursor:pointer">
-      <label for="save-login" style="font-size:13px;color:var(--text-sub);cursor:pointer">ログイン情報を保存する</label>
-    </div>
     <div id="login-error" class="error-msg">社員番号またはパスワードが正しくありません</div>
     <button class="btn btn-primary" id="login-btn" onclick="doLogin()" style="margin-top:20px">
       ログイン
@@ -869,7 +901,7 @@
       <nav class="nav-tabs" id="nav-tabs" style="position:relative"></nav>
     </div>
     <div class="topbar-right">
-      <div class="user-badge">
+      <div class="user-badge" onclick="openAvatarModal()" style="cursor:pointer" title="アイコンの色を変更">
         <div class="user-avatar" id="topbar-avatar">?</div>
         <div>
           <div class="user-name" id="topbar-name">-</div>
@@ -1134,7 +1166,14 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">入社日 *</label>
-          <input type="date" id="emp-hire" class="form-input">
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="emp-hire-y" placeholder="YYYY" min="1900" max="2099" onkeyup="autoAdvanceDate(this,'emp-hire-m',4)" oninput="syncDateParts('emp-hire')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="emp-hire-m" placeholder="MM" min="1" max="12" onkeyup="autoAdvanceDate(this,'emp-hire-d',2)" oninput="syncDateParts('emp-hire')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="emp-hire-d" placeholder="DD" min="1" max="31" oninput="syncDateParts('emp-hire')">
+          </div>
+          <input type="hidden" id="emp-hire">
         </div>
         <div class="form-group">
           <label class="form-label">1日の労働時間 *</label>
@@ -1284,11 +1323,25 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">開始日 *</label>
-          <input type="date" id="leave-start" class="form-input" onchange="calcLeaveDays()">
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="leave-start-y" placeholder="YYYY" min="1900" max="2099" onkeyup="autoAdvanceDate(this,'leave-start-m',4)" oninput="syncDateParts('leave-start');calcLeaveDays()">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="leave-start-m" placeholder="MM" min="1" max="12" onkeyup="autoAdvanceDate(this,'leave-start-d',2)" oninput="syncDateParts('leave-start');calcLeaveDays()">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="leave-start-d" placeholder="DD" min="1" max="31" oninput="syncDateParts('leave-start');calcLeaveDays()">
+          </div>
+          <input type="hidden" id="leave-start">
         </div>
         <div class="form-group" id="leave-end-group">
           <label class="form-label">終了日 *</label>
-          <input type="date" id="leave-end" class="form-input" onchange="calcLeaveDays()">
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="leave-end-y" placeholder="YYYY" min="1900" max="2099" onkeyup="autoAdvanceDate(this,'leave-end-m',4)" oninput="syncDateParts('leave-end');calcLeaveDays()">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="leave-end-m" placeholder="MM" min="1" max="12" onkeyup="autoAdvanceDate(this,'leave-end-d',2)" oninput="syncDateParts('leave-end');calcLeaveDays()">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="leave-end-d" placeholder="DD" min="1" max="31" oninput="syncDateParts('leave-end');calcLeaveDays()">
+          </div>
+          <input type="hidden" id="leave-end">
         </div>
       </div>
       <div class="form-group" id="leave-days-group">
@@ -1363,11 +1416,25 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">開始日 *</label>
-          <input type="date" id="special-start" class="form-input" onchange="calcSpecialDays()">
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="special-start-y" placeholder="YYYY" min="1900" max="2099" onkeyup="autoAdvanceDate(this,'special-start-m',4)" oninput="syncDateParts('special-start');calcSpecialDays()">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="special-start-m" placeholder="MM" min="1" max="12" onkeyup="autoAdvanceDate(this,'special-start-d',2)" oninput="syncDateParts('special-start');calcSpecialDays()">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="special-start-d" placeholder="DD" min="1" max="31" oninput="syncDateParts('special-start');calcSpecialDays()">
+          </div>
+          <input type="hidden" id="special-start">
         </div>
         <div class="form-group" id="special-end-group">
           <label class="form-label">終了日</label>
-          <input type="date" id="special-end" class="form-input" onchange="calcSpecialDays()">
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="special-end-y" placeholder="YYYY" min="1900" max="2099" onkeyup="autoAdvanceDate(this,'special-end-m',4)" oninput="syncDateParts('special-end')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="special-end-m" placeholder="MM" min="1" max="12" onkeyup="autoAdvanceDate(this,'special-end-d',2)" oninput="syncDateParts('special-end')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="special-end-d" placeholder="DD" min="1" max="31" oninput="syncDateParts('special-end')">
+          </div>
+          <input type="hidden" id="special-end">
         </div>
       </div>
 
@@ -1421,7 +1488,14 @@
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">出勤日 *</label>
-        <input type="date" id="hw-date" class="form-input">
+        <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="hw-date-y" placeholder="YYYY" min="1900" max="2099" onkeyup="autoAdvanceDate(this,'hw-date-m',4)" oninput="syncDateParts('hw-date')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="hw-date-m" placeholder="MM" min="1" max="12" onkeyup="autoAdvanceDate(this,'hw-date-d',2)" oninput="syncDateParts('hw-date')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="hw-date-d" placeholder="DD" min="1" max="31" oninput="syncDateParts('hw-date')">
+          </div>
+          <input type="hidden" id="hw-date">
       </div>
       <div id="hw-times-container"></div>
       <button class="btn btn-ghost btn-sm" onclick="addHwTime()" style="width:100%;margin-bottom:16px">
@@ -1520,6 +1594,62 @@
   </div>
 </div>
 
+<!-- バックアップ確認モーダル -->
+<div class="modal-overlay" id="backup-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">📦 月次バックアップ</div>
+      <button class="modal-close" onclick="closeModal('backup-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box" style="margin-bottom:16px">
+        今月のバックアップがまだ取得されていません。<br>
+        データをCSVファイルでダウンロードしますか？
+      </div>
+      <p style="font-size:13px;color:var(--text-sub)">
+        以下のデータをダウンロードします：<br>
+        社員情報・有休申請・特別休暇・休日出勤・タイムカード・有休残高
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="skipBackup()">今月はスキップ</button>
+      <button class="btn btn-primary" onclick="doBackup()">バックアップを取得</button>
+    </div>
+  </div>
+</div>
+
+<!-- アバターカラー選択モーダル -->
+<div class="modal-overlay" id="avatar-modal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title">アイコンの色を選ぶ</div>
+      <button class="modal-close" onclick="closeModal('avatar-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:20px">
+        <div id="avatar-preview" style="width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:white;margin-bottom:8px"></div>
+        <div style="font-size:13px;color:var(--text-sub)">プレビュー</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;justify-items:center">
+        <button class="avatar-color-btn" data-color="#2563EB" style="background:#2563EB" onclick="selectAvatarColor('#2563EB')"></button>
+        <button class="avatar-color-btn" data-color="#16A34A" style="background:#16A34A" onclick="selectAvatarColor('#16A34A')"></button>
+        <button class="avatar-color-btn" data-color="#DC2626" style="background:#DC2626" onclick="selectAvatarColor('#DC2626')"></button>
+        <button class="avatar-color-btn" data-color="#D97706" style="background:#D97706" onclick="selectAvatarColor('#D97706')"></button>
+        <button class="avatar-color-btn" data-color="#7C3AED" style="background:#7C3AED" onclick="selectAvatarColor('#7C3AED')"></button>
+        <button class="avatar-color-btn" data-color="#DB2777" style="background:#DB2777" onclick="selectAvatarColor('#DB2777')"></button>
+        <button class="avatar-color-btn" data-color="#0891B2" style="background:#0891B2" onclick="selectAvatarColor('#0891B2')"></button>
+        <button class="avatar-color-btn" data-color="#65A30D" style="background:#65A30D" onclick="selectAvatarColor('#65A30D')"></button>
+        <button class="avatar-color-btn" data-color="#EA580C" style="background:#EA580C" onclick="selectAvatarColor('#EA580C')"></button>
+        <button class="avatar-color-btn" data-color="#475569" style="background:#475569" onclick="selectAvatarColor('#475569')"></button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('avatar-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveAvatarColor()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <!-- トースト -->
 <div id="toast"></div>
 
@@ -1527,18 +1657,7 @@
 const SUPABASE_URL = 'https://zpgjygjpzvdjbfmalmco.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZ2p5Z2pwenZkamJmbWFsbWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODk4OTksImV4cCI6MjA5NzE2NTg5OX0.rZIBjPmeX7J66irNwdm4-p7PuoUc5wBoaCd5uNYoAI0';
 
-// 保存済みログイン情報を読み込む
-(function loadSavedLogin() {
-  try {
-    const saved = localStorage.getItem('jinji_login');
-    if (saved) {
-      const { id, pw } = JSON.parse(saved);
-      document.getElementById('login-id').value = id || '';
-      document.getElementById('login-pw').value = pw || '';
-      document.getElementById('save-login').checked = true;
-    }
-  } catch(e) {}
-})();
+
 
 // ===== API =====
 async function api(method, path, body) {
@@ -1596,12 +1715,7 @@ async function doLogin() {
 
     const emp = rows[0];
 
-    // ログイン情報を保存
-    if (document.getElementById('save-login').checked) {
-      localStorage.setItem('jinji_login', JSON.stringify({ id: num, pw }));
-    } else {
-      localStorage.removeItem('jinji_login');
-    }
+
 
     // 初回ログイン判定
     if (emp.is_first_login) {
@@ -1662,11 +1776,17 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
 
+  // 法定保存期間超過データの自動削除（バックグラウンドで実行）
+  autoDeleteExpiredData();
+  // バックアップ確認（総務部・月初め）
+  setTimeout(checkBackupNeeded, 1500);
+
   // topbar
   const initials = currentUser.name.charAt(0);
   document.getElementById('topbar-avatar').textContent = initials;
   document.getElementById('topbar-name').textContent = currentUser.name;
   document.getElementById('topbar-role').textContent = currentUser.role;
+  applyAvatarColor();
 
   // ナビ構築
   buildNav();
@@ -1858,6 +1978,7 @@ function openAddModal() {
   document.getElementById('emp-hire').value = '';
   document.getElementById('emp-hours').value = '8';
   document.getElementById('emp-initial-pw').value = '';
+  clearDateParts('emp-hire');
   document.getElementById('emp-modal-title').textContent = '社員を追加';
   document.getElementById('emp-save-btn').textContent = '登録する';
   document.getElementById('emp-number').disabled = false;
@@ -1878,7 +1999,7 @@ function openEditModal(id) {
   document.getElementById('emp-name').value = e.name;
   document.getElementById('emp-role').value = e.role;
   document.getElementById('emp-dept').value = e.department || '';
-  document.getElementById('emp-hire').value = e.hire_date || '';
+  setDateParts('emp-hire', e.hire_date || '');
   document.getElementById('emp-hours').value = e.daily_work_hours || 8;
   document.getElementById('emp-modal-title').textContent = '社員情報を編集';
   document.getElementById('emp-save-btn').textContent = '保存する';
@@ -2093,8 +2214,8 @@ async function cancelLeave(id) {
 // ===== 有休申請モーダル =====
 function openLeaveModal() {
   document.getElementById('leave-type').value = '終日';
-  document.getElementById('leave-start').value = '';
-  document.getElementById('leave-end').value = '';
+  clearDateParts('leave-start');
+  clearDateParts('leave-end');
   document.getElementById('leave-reason').value = '';
   document.getElementById('leave-start-time').value = '';
   document.getElementById('leave-end-time').value = '';
@@ -3602,8 +3723,8 @@ async function cancelSpecialLeave(id) {
 
 function openSpecialLeaveModal() {
   document.getElementById('special-type').value = '';
-  document.getElementById('special-start').value = '';
-  document.getElementById('special-end').value = '';
+  clearDateParts('special-start');
+  clearDateParts('special-end');
   document.getElementById('special-start-time').value = '';
   document.getElementById('special-end-time').value = '';
   document.getElementById('special-break').value = '0';
@@ -3879,7 +4000,7 @@ async function cancelHolidayWork(id) {
 }
 
 function openHolidayWorkModal() {
-  document.getElementById('hw-date').value = '';
+  clearDateParts('hw-date');
   document.getElementById('hw-reason').value = '';
   document.getElementById('hw-calc-result').style.display = 'none';
   hwTimes = [{ start: '', end: '', breakH: 0 }];
@@ -3998,6 +4119,259 @@ function clearApproveSearch() {
   if (t) t.value = '';
   renderApproveTable();
 }
+
+// ===== 法定保存期間超過データの自動削除 =====
+async function autoDeleteExpiredData() {
+  try {
+    const threeYearsAgo = new Date();
+    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+    const cutoffDate = threeYearsAgo.toISOString().slice(0, 10);
+    const cutoffTs = threeYearsAgo.toISOString();
+
+    // 有休・特別休暇申請（申請日から3年）
+    await apiDelete(`leave_requests?created_at=lt.${cutoffTs}`);
+
+    // 休日出勤申請（出勤日から3年）
+    await apiDelete(`holiday_work_requests?work_date=lt.${cutoffDate}`);
+
+    // タイムカード（出勤日から3年）
+    await apiDelete(`timecard_records?work_date=lt.${cutoffDate}`);
+
+    // 有休残高（期限日から3年）
+    await apiDelete(`paid_leave_balance?expire_date=lt.${cutoffDate}`);
+
+    console.log('法定保存期間超過データの自動削除完了');
+  } catch(e) {
+    console.log('自動削除処理エラー:', e.message);
+  }
+}
+
+
+// ===== バックアップ機能 =====
+async function checkBackupNeeded() {
+  if (currentUser.role !== '総務部') return;
+  try {
+    const now = new Date();
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const lastBackup = localStorage.getItem('jinji_last_backup');
+    if (lastBackup === yearMonth) return; // 今月済み
+    // 月初め（1〜5日）に表示
+    if (now.getDate() <= 5) {
+      openModal('backup-modal');
+    }
+  } catch(e) {}
+}
+
+function skipBackup() {
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  localStorage.setItem('jinji_last_backup', yearMonth);
+  closeModal('backup-modal');
+}
+
+async function doBackup() {
+  const btn = document.querySelector('#backup-modal .btn-primary');
+  btn.disabled = true;
+  btn.textContent = '取得中...';
+
+  try {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+
+    // 各テーブルのデータを取得
+    const [emps, leaveReqs, hwReqs, tcRecs, balances] = await Promise.all([
+      apiGet('employees?select=*&order=employee_number.asc'),
+      apiGet('leave_requests?select=*&order=created_at.desc'),
+      apiGet('holiday_work_requests?select=*&order=created_at.desc'),
+      apiGet('timecard_records?select=*&order=work_date.desc'),
+      apiGet('paid_leave_balance?select=*&order=granted_date.asc')
+    ]);
+
+    // CSVに変換してZIP的にまとめてダウンロード
+    downloadCSV(emps || [], '社員情報', `backup_employees_${dateStr}.csv`);
+    await sleep(300);
+    downloadCSV(leaveReqs || [], '有休・特別休暇申請', `backup_leave_requests_${dateStr}.csv`);
+    await sleep(300);
+    downloadCSV(hwReqs || [], '休日出勤申請', `backup_holiday_work_${dateStr}.csv`);
+    await sleep(300);
+    downloadCSV(tcRecs || [], 'タイムカード', `backup_timecard_${dateStr}.csv`);
+    await sleep(300);
+    downloadCSV(balances || [], '有休残高', `backup_leave_balance_${dateStr}.csv`);
+
+    // バックアップ日を記録
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    localStorage.setItem('jinji_last_backup', yearMonth);
+
+    closeModal('backup-modal');
+    toast('バックアップを取得しました（5ファイル）');
+  } catch(e) {
+    toast('バックアップに失敗しました: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'バックアップを取得';
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function downloadCSV(data, sheetName, filename) {
+  if (!data || data.length === 0) {
+    // 空でもヘッダーだけ出力
+    const blob = new Blob([`# ${sheetName} - データなし`], { type: 'text/csv;charset=utf-8;' });
+    triggerDownload(blob, filename);
+    return;
+  }
+
+  // ヘッダー行
+  const headers = Object.keys(data[0]);
+  const rows = [headers.join(',')];
+
+  // データ行
+  data.forEach(row => {
+    const vals = headers.map(h => {
+      const v = row[h];
+      if (v === null || v === undefined) return '';
+      const str = String(v);
+      // カンマや改行を含む場合はダブルクォートで囲む
+      if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    });
+    rows.push(vals.join(','));
+  });
+
+  // BOM付きUTF-8（Excelで文字化けしない）
+  const bom = '﻿';
+  const blob = new Blob([bom + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+
+  triggerDownload(blob, filename);
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+// ===== アバターカラー =====
+let selectedAvatarColor = '#2563EB';
+
+function getAvatarColor() {
+  return currentUser?.avatar_color || '#2563EB';
+}
+
+function applyAvatarColor() {
+  const color = getAvatarColor();
+  const avatar = document.getElementById('topbar-avatar');
+  if (avatar) avatar.style.background = color;
+}
+
+function openAvatarModal() {
+  selectedAvatarColor = getAvatarColor();
+  // プレビュー更新
+  const preview = document.getElementById('avatar-preview');
+  if (preview) {
+    preview.style.background = selectedAvatarColor;
+    preview.textContent = currentUser.name.charAt(0);
+  }
+  // 選択状態を反映
+  document.querySelectorAll('.avatar-color-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.color === selectedAvatarColor);
+  });
+  openModal('avatar-modal');
+}
+
+function selectAvatarColor(color) {
+  selectedAvatarColor = color;
+  document.querySelectorAll('.avatar-color-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.color === color);
+  });
+  const preview = document.getElementById('avatar-preview');
+  if (preview) preview.style.background = color;
+}
+
+async function saveAvatarColor() {
+  await apiPatch(`employees?id=eq.${currentUser.id}`, { avatar_color: selectedAvatarColor });
+  currentUser.avatar_color = selectedAvatarColor;
+  applyAvatarColor();
+  closeModal('avatar-modal');
+  toast('アイコンの色を変更しました');
+}
+
+
+// ===== カスタム日付入力 =====
+function syncDateParts(baseId) {
+  const y = document.getElementById(baseId + '-y')?.value || '';
+  const m = document.getElementById(baseId + '-m')?.value || '';
+  const d = document.getElementById(baseId + '-d')?.value || '';
+  const hidden = document.getElementById(baseId);
+  if (!hidden) return;
+  if (y.length === 4 && m && d) {
+    const mm = String(m).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    hidden.value = `${y}-${mm}-${dd}`;
+  } else {
+    hidden.value = '';
+  }
+}
+
+function autoAdvanceDate(el, nextId, maxLen) {
+  if (String(el.value).length >= maxLen) {
+    const next = document.getElementById(nextId);
+    if (next) { next.focus(); next.select(); }
+  }
+}
+
+function setDateParts(baseId, dateStr) {
+  if (!dateStr) return;
+  const [y, m, d] = dateStr.split('-');
+  const yEl = document.getElementById(baseId + '-y');
+  const mEl = document.getElementById(baseId + '-m');
+  const dEl = document.getElementById(baseId + '-d');
+  if (yEl) yEl.value = y || '';
+  if (mEl) mEl.value = m ? parseInt(m) : '';
+  if (dEl) dEl.value = d ? parseInt(d) : '';
+  const hidden = document.getElementById(baseId);
+  if (hidden) hidden.value = dateStr;
+}
+
+function clearDateParts(baseId) {
+  const yEl = document.getElementById(baseId + '-y');
+  const mEl = document.getElementById(baseId + '-m');
+  const dEl = document.getElementById(baseId + '-d');
+  if (yEl) yEl.value = '';
+  if (mEl) mEl.value = '';
+  if (dEl) dEl.value = '';
+  const hidden = document.getElementById(baseId);
+  if (hidden) hidden.value = '';
+}
+
+// ===== Enterキーで次の入力欄に移動 =====
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  const focusable = Array.from(document.querySelectorAll(
+    'input:not([type=hidden]):not([type=checkbox]), select, textarea, button.btn-primary'
+  )).filter(el => {
+    const modal = el.closest('.modal-overlay.open');
+    const activePage = el.closest('.page.active');
+    return (modal || activePage) && !el.disabled && el.offsetParent !== null;
+  });
+  const idx = focusable.indexOf(document.activeElement);
+  if (idx >= 0 && idx < focusable.length - 1) {
+    e.preventDefault();
+    focusable[idx + 1].focus();
+  }
+});
 
 // ===== TOAST =====
 function toast(msg, type = 'success') {
