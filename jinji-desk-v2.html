@@ -3017,10 +3017,16 @@ function renderBalanceCardsTo(balances, targetId) {
   const el = document.getElementById(targetId);
   if (!el) return;
   const total = balances.reduce((s,b) => s + (parseFloat(b.granted_days) - parseFloat(b.used_days)), 0);
-  const granted = balances.reduce((s,b) => s + parseFloat(b.granted_days), 0);
   const usedFullDays = leaveRequests
     .filter(r => r.leave_subtype === '終日' && r.status !== '却下')
     .reduce((s, r) => s + parseFloat(r.total_days || 0), 0);
+
+  // 時間休使用済（パート以外）
+  const showHourly = currentUser.role !== 'パート・アルバイト';
+  const usedHours = leaveRequests
+    .filter(r => r.leave_subtype === '時間' && r.status !== '却下')
+    .reduce((s, r) => s + parseFloat(r.total_hours || 0), 0);
+  const maxHours = (currentUser.daily_work_hours || 8) * 5;
 
   const now = new Date();
   let decAlert = '';
@@ -3039,13 +3045,15 @@ function renderBalanceCardsTo(balances, targetId) {
       <div style="font-size:28px;font-weight:700;color:var(--primary)">${total.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
     </div>
     <div class="card" style="padding:20px">
-      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">付与合計</div>
-      <div style="font-size:28px;font-weight:700;color:var(--text)">${granted.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
-    </div>
-    <div class="card" style="padding:20px">
       <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">使用済（終日）</div>
       <div style="font-size:28px;font-weight:700;color:var(--text)">${usedFullDays.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">日</span></div>
     </div>
+    ${showHourly ? `
+    <div class="card" style="padding:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">時間休使用済</div>
+      <div style="font-size:28px;font-weight:700;color:var(--text)">${usedHours.toFixed(1)}<span style="font-size:14px;font-weight:400;margin-left:4px">時間</span></div>
+      <div style="font-size:11px;color:var(--text-hint);margin-top:4px">上限${maxHours}時間</div>
+    </div>` : ''}
   `;
 }
 
