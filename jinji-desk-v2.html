@@ -1987,9 +1987,9 @@ function buildNav() {
   if (useTC) pages.push({ id: 'timecard', label: 'タイムカード', fn: () => initTimecardPage() });
   if (isApproverOrAbove) pages.push({ id: 'approve', label: '承認管理', fn: () => loadApproveList() });
   if (isApprover || isOfficer || isSoumu) pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
+  pages.push({ id: 'evaluation', label: '人事評価', fn: () => initEvalPage() });
 
   if (isSoumu) {
-    pages.push({ id: 'evaluation', label: '人事評価', fn: () => initEvalPage() });
     pages.push({ id: 'settings', label: '設定', fn: () => initSettingsPage() });
   }
 
@@ -3781,7 +3781,7 @@ function renderDashboardButtons() {
     icon: '⭐', color: '#FFF7ED', iconColor: '#EA580C',
     label: '人事評価',
     desc: '評価の入力・確認',
-    onclick: () => { showPage('evaluation'); }
+    onclick: () => { showPage('evaluation'); initEvalPage(); }
   });
 
   // 設定（総務部のみ）
