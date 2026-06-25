@@ -1704,6 +1704,11 @@
         <input type="text" id="eval-tmpl-dept" class="form-input" placeholder="空白の場合は全部署">
       </div>
       <div class="form-group">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="eval-tmpl-include-part" style="width:16px;height:16px"> パート・アルバイトも評価対象に含む
+        </label>
+      </div>
+      <div class="form-group">
         <label class="form-label">回答期限</label>
         <div class="date-input-group">
           <input type="number" class="date-part date-part-y" id="eval-tmpl-deadline-y" placeholder="YYYY" onkeyup="autoAdvanceDate(this,'eval-tmpl-deadline-m',4)" oninput="syncDateParts('eval-tmpl-deadline')">
@@ -2247,8 +2252,10 @@ function closeModal(id) {
 }
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  let mouseDownTarget = null;
+  overlay.addEventListener('mousedown', e => { mouseDownTarget = e.target; });
   overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
+    if (e.target === overlay && mouseDownTarget === overlay) overlay.classList.remove('open');
   });
 });
 
@@ -4533,19 +4540,35 @@ let evalItemRows = [];
 let evalPeerQRows = [];
 
 async function initEvalPage() {
-  const isMgr = currentUser.role === '総務部' || currentUser.role === '役員';
+  const isSoumu = currentUser.role === '総務部';
+  const isOfficer = currentUser.role === '役員';
   const isApprover = currentUser.role === '承認者';
+  const isGeneral = !isSoumu && !isOfficer && !isApprover;
+
+  // 社員データを確実にロード
+  if (employees.length === 0) {
+    employees = await apiGet('employees?select=*&order=employee_number.asc') || [];
+  }
 
   const tabs = [];
-  tabs.push({ id: 'sub-self-eval', label: '自己評価', fn: loadSelfEval });
-  tabs.push({ id: 'sub-peer-eval', label: '他者評価', fn: loadPeerEval });
-  if (isApprover || isMgr) {
+
+  // 自己評価・他者評価：正社員・パート・承認者のみ
+  if (isGeneral || isApprover) {
+    tabs.push({ id: 'sub-self-eval', label: '自己評価', fn: loadSelfEval });
+    tabs.push({ id: 'sub-peer-eval', label: '他者評価', fn: loadPeerEval });
+  }
+
+  // 上長評価：承認者・役員のみ
+  if (isApprover || isOfficer) {
     tabs.push({ id: 'sub-superior-eval', label: '上長評価', fn: loadSuperiorEval });
   }
-  if (isMgr) {
+
+  // 評価管理・評価結果：総務部・役員のみ
+  if (isSoumu || isOfficer) {
     tabs.push({ id: 'sub-eval-manage', label: '評価管理', fn: loadEvalManage });
     tabs.push({ id: 'sub-eval-results', label: '評価結果', fn: loadEvalResults });
   }
+
   buildSubNav('eval-sub-nav', 'eval-sub-content', tabs);
 }
 
@@ -4598,6 +4621,7 @@ function openEvalTemplateModal() {
   document.getElementById('eval-tmpl-has-self').checked = true;
   document.getElementById('eval-tmpl-has-superior').checked = true;
   document.getElementById('eval-tmpl-has-peer').checked = true;
+  document.getElementById('eval-tmpl-include-part').checked = false;
   evalItemRows = [
     { type: 'rating', question: '業務達成度', eval_type: 'both' },
     { type: 'rating', question: '責任感', eval_type: 'both' },
@@ -4630,8 +4654,8 @@ function renderEvalItemRows() {
       <div class="form-row" style="margin-bottom:8px">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">項目名</label>
-          <input type="text" class="form-input" value="${row.question}"
-            onchange="evalItemRows[${i}].question = this.value">
+          <textarea class="form-input" rows="2" style="resize:vertical"
+            onchange="evalItemRows[${i}].question = this.value">${row.question}</textarea>
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">形式</label>
@@ -4670,8 +4694,9 @@ function renderEvalPeerQRows() {
     <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
       <div class="form-group" style="margin-bottom:8px">
         <label class="form-label">設問</label>
-        <input type="text" class="form-input" value="${row.question}" placeholder="例: 今期特に頑張っていた人"
-          onchange="evalPeerQRows[${i}].question = this.value">
+        <textarea class="form-input" rows="2" style="resize:vertical"
+          placeholder="例: 今期特に頑張っていた人"
+          onchange="evalPeerQRows[${i}].question = this.value">${row.question}</textarea>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="display:flex;align-items:center;gap:8px;font-size:13px">
@@ -4700,6 +4725,7 @@ async function saveEvalTemplate() {
     has_self_eval: document.getElementById('eval-tmpl-has-self').checked,
     has_superior_eval: document.getElementById('eval-tmpl-has-superior').checked,
     has_peer_eval: document.getElementById('eval-tmpl-has-peer').checked,
+    include_part: document.getElementById('eval-tmpl-include-part').checked,
     created_by: currentUser.id
   };
 
@@ -4788,6 +4814,9 @@ async function viewEvalProgress(periodId) {
   if (tmpl && tmpl.target_department) {
     targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
   }
+  if (tmpl && !tmpl.include_part) {
+    targetEmps = targetEmps.filter(e => e.role !== 'パート・アルバイト');
+  }
 
   // 自己評価提出済み社員
   const selfAnswers = await apiGet(`eval_self_answers?period_id=eq.${periodId}&submitted=eq.true&select=employee_id`) || [];
@@ -4866,7 +4895,7 @@ async function loadSelfEval() {
     </div>
     ${items.map(item => `
       <div class="card" style="margin-bottom:12px;padding:20px">
-        <div style="font-weight:600;margin-bottom:12px">${item.question}</div>
+        <div style="font-weight:600;margin-bottom:12px;line-height:1.7;font-size:14px;color:var(--text)">${item.question}</div>
         ${item.item_type === 'rating' ? `
           <div style="display:flex;gap:8px;font-size:28px">
             ${[1,2,3,4,5].map(n => `
@@ -4876,10 +4905,11 @@ async function loadSelfEval() {
           </div>
           <div id="rating-val-${item.id}" style="font-size:12px;color:var(--text-sub);margin-top:4px">${answerMap[item.id]?.rating ? `${answerMap[item.id].rating}/5` : ''}</div>
         ` : `
-          <textarea class="form-input" rows="3" ${isSubmitted ? 'readonly' : ''}
+          <textarea class="form-input" ${isSubmitted ? 'readonly' : ''}
             id="text-answer-${item.id}"
+            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
             onchange="saveSelfTextAnswer('${period.id}','${item.id}',this.value)"
-            style="resize:vertical">${answerMap[item.id]?.text_answer || ''}</textarea>
+            style="resize:none;min-height:80px;overflow:hidden">${answerMap[item.id]?.text_answer || ''}</textarea>
         `}
       </div>
     `).join('')}
@@ -4920,6 +4950,11 @@ async function loadPeerEval() {
   if (!el) return;
   el.innerHTML = '<div style="color:var(--text-sub);text-align:center;padding:40px">読み込み中...</div>';
 
+  // 社員データを確実にロード
+  if (employees.length === 0) {
+    employees = await apiGet('employees?select=*&order=employee_number.asc') || [];
+  }
+
   const periods = await apiGet('eval_periods?status=eq.進行中&select=*&order=created_at.desc') || [];
   if (periods.length === 0) {
     el.innerHTML = '<div class="card"><div class="empty-state"><p>現在進行中の評価期間がありません</p></div></div>';
@@ -4944,6 +4979,7 @@ async function loadPeerEval() {
   // 対象社員（自分以外）
   let targetEmps = employees.filter(e => e.id !== currentUser.id && e.role !== '総務部');
   if (tmpl.target_department) targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
+  if (!tmpl.include_part) targetEmps = targetEmps.filter(e => e.role !== 'パート・アルバイト');
 
   el.innerHTML = `
     <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> - 他者評価</div>
