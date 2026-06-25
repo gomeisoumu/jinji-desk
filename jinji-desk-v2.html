@@ -1089,10 +1089,42 @@
       </div>
     </div>
 
-    <!-- 人事評価（総務部のみ） -->
+    <!-- 人事評価 -->
     <div class="page" id="page-evaluation">
       <div class="page-header"><div><div class="page-title">人事評価</div></div></div>
-      <div style="color:var(--text-sub);text-align:center;padding:60px">人事評価機能（近日実装予定）</div>
+      <div class="sub-nav" id="eval-sub-nav"></div>
+      <div id="eval-sub-content">
+
+        <!-- 自己評価 -->
+        <div id="sub-self-eval" style="display:none">
+          <div id="self-eval-content"></div>
+        </div>
+
+        <!-- 他者評価 -->
+        <div id="sub-peer-eval" style="display:none">
+          <div id="peer-eval-content"></div>
+        </div>
+
+        <!-- 上長評価 -->
+        <div id="sub-superior-eval" style="display:none">
+          <div id="superior-eval-content"></div>
+        </div>
+
+        <!-- 評価管理（総務部・役員のみ） -->
+        <div id="sub-eval-manage" style="display:none">
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px">
+            <button class="btn btn-ghost" onclick="openEvalTemplateModal()">テンプレートを作成</button>
+            <button class="btn btn-primary" onclick="openEvalPeriodModal()">評価期間を開始</button>
+          </div>
+          <div id="eval-periods-list"></div>
+        </div>
+
+        <!-- 評価結果（総務部・役員のみ） -->
+        <div id="sub-eval-results" style="display:none">
+          <div id="eval-results-content"></div>
+        </div>
+
+      </div>
     </div>
 
     <!-- 設定（総務部のみ） -->
@@ -1654,6 +1686,111 @@
   </div>
 </div>
 
+
+<!-- 評価テンプレート作成モーダル -->
+<div class="modal-overlay" id="eval-template-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title" id="eval-template-modal-title">評価テンプレートを作成</div>
+      <button class="modal-close" onclick="closeModal('eval-template-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">テンプレート名 *</label>
+        <input type="text" id="eval-tmpl-name" class="form-input" placeholder="例: 2026年上期評価">
+      </div>
+      <div class="form-group">
+        <label class="form-label">対象部署</label>
+        <input type="text" id="eval-tmpl-dept" class="form-input" placeholder="空白の場合は全部署">
+      </div>
+      <div class="form-group">
+        <label class="form-label">回答期限</label>
+        <div class="date-input-group">
+          <input type="number" class="date-part date-part-y" id="eval-tmpl-deadline-y" placeholder="YYYY" onkeyup="autoAdvanceDate(this,'eval-tmpl-deadline-m',4)" oninput="syncDateParts('eval-tmpl-deadline')">
+          <span class="date-sep">/</span>
+          <input type="number" class="date-part date-part-m" id="eval-tmpl-deadline-m" placeholder="MM" onkeyup="autoAdvanceDate(this,'eval-tmpl-deadline-d',2)" oninput="syncDateParts('eval-tmpl-deadline')">
+          <span class="date-sep">/</span>
+          <input type="number" class="date-part date-part-d" id="eval-tmpl-deadline-d" placeholder="DD" oninput="syncDateParts('eval-tmpl-deadline')">
+        </div>
+        <input type="hidden" id="eval-tmpl-deadline">
+      </div>
+      <div style="display:flex;gap:20px;margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="eval-tmpl-has-self" checked style="width:16px;height:16px"> 自己評価あり
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="eval-tmpl-has-superior" checked style="width:16px;height:16px"> 上長評価あり
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="eval-tmpl-has-peer" checked style="width:16px;height:16px"> 他者評価あり
+        </label>
+      </div>
+      <hr class="divider">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">評価項目（自己・上長評価）</div>
+      <div id="eval-items-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addEvalItem()" style="width:100%;margin-bottom:16px">＋ 項目を追加</button>
+      <hr class="divider">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">他者評価の設問</div>
+      <div id="eval-peer-questions-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addEvalPeerQuestion()" style="width:100%">＋ 設問を追加</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('eval-template-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveEvalTemplate()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 評価期間作成モーダル -->
+<div class="modal-overlay" id="eval-period-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">評価期間を開始</div>
+      <button class="modal-close" onclick="closeModal('eval-period-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">評価期間名 *</label>
+        <input type="text" id="eval-period-name" class="form-input" placeholder="例: 2026年上期">
+      </div>
+      <div class="form-group">
+        <label class="form-label">テンプレート *</label>
+        <select id="eval-period-template" class="form-input">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">開始日 *</label>
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="eval-period-start-y" placeholder="YYYY" onkeyup="autoAdvanceDate(this,'eval-period-start-m',4)" oninput="syncDateParts('eval-period-start')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="eval-period-start-m" placeholder="MM" onkeyup="autoAdvanceDate(this,'eval-period-start-d',2)" oninput="syncDateParts('eval-period-start')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="eval-period-start-d" placeholder="DD" oninput="syncDateParts('eval-period-start')">
+          </div>
+          <input type="hidden" id="eval-period-start">
+        </div>
+        <div class="form-group">
+          <label class="form-label">終了日 *</label>
+          <div class="date-input-group">
+            <input type="number" class="date-part date-part-y" id="eval-period-end-y" placeholder="YYYY" onkeyup="autoAdvanceDate(this,'eval-period-end-m',4)" oninput="syncDateParts('eval-period-end')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-m" id="eval-period-end-m" placeholder="MM" onkeyup="autoAdvanceDate(this,'eval-period-end-d',2)" oninput="syncDateParts('eval-period-end')">
+            <span class="date-sep">/</span>
+            <input type="number" class="date-part date-part-d" id="eval-period-end-d" placeholder="DD" oninput="syncDateParts('eval-period-end')">
+          </div>
+          <input type="hidden" id="eval-period-end">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('eval-period-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveEvalPeriod()">開始する</button>
+    </div>
+  </div>
+</div>
+
 <!-- トースト -->
 <div id="toast"></div>
 
@@ -1846,7 +1983,7 @@ function buildNav() {
   if (isApprover || isOfficer || isSoumu) pages.push({ id: 'attendance', label: '勤怠管理', fn: () => initAttendancePage() });
 
   if (isSoumu) {
-    pages.push({ id: 'evaluation', label: '人事評価', fn: () => {} });
+    pages.push({ id: 'evaluation', label: '人事評価', fn: () => initEvalPage() });
     pages.push({ id: 'settings', label: '設定', fn: () => initSettingsPage() });
   }
 
@@ -4384,6 +4521,635 @@ document.addEventListener('keydown', function(e) {
     focusable[idx + 1].focus();
   }
 });
+
+
+// ===== 人事評価 =====
+let evalTemplates = [];
+let evalPeriods = [];
+let evalItems = [];
+let evalPeerQuestions = [];
+let currentEvalPeriod = null;
+let evalItemRows = [];
+let evalPeerQRows = [];
+
+async function initEvalPage() {
+  const isMgr = currentUser.role === '総務部' || currentUser.role === '役員';
+  const isApprover = currentUser.role === '承認者';
+
+  const tabs = [];
+  tabs.push({ id: 'sub-self-eval', label: '自己評価', fn: loadSelfEval });
+  tabs.push({ id: 'sub-peer-eval', label: '他者評価', fn: loadPeerEval });
+  if (isApprover || isMgr) {
+    tabs.push({ id: 'sub-superior-eval', label: '上長評価', fn: loadSuperiorEval });
+  }
+  if (isMgr) {
+    tabs.push({ id: 'sub-eval-manage', label: '評価管理', fn: loadEvalManage });
+    tabs.push({ id: 'sub-eval-results', label: '評価結果', fn: loadEvalResults });
+  }
+  buildSubNav('eval-sub-nav', 'eval-sub-content', tabs);
+}
+
+// ===== 評価管理 =====
+async function loadEvalManage() {
+  try {
+    evalTemplates = await apiGet('eval_templates?select=*&order=created_at.desc') || [];
+    evalPeriods = await apiGet('eval_periods?select=*&order=created_at.desc') || [];
+    renderEvalPeriodsList();
+  } catch(e) { toast('読み込みに失敗しました', 'error'); }
+}
+
+function renderEvalPeriodsList() {
+  const el = document.getElementById('eval-periods-list');
+  if (!el) return;
+
+  if (evalPeriods.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>評価期間がありません。「評価期間を開始」から作成してください。</p></div></div>';
+    return;
+  }
+
+  el.innerHTML = evalPeriods.map(p => {
+    const tmpl = evalTemplates.find(t => t.id === p.template_id);
+    const statusBadge = p.status === '完了' ? 'badge-green' : 'badge-blue';
+    return `
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header">
+          <div>
+            <div class="card-title">${p.name}</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-top:2px">
+              ${tmpl ? tmpl.name : '—'} ／ ${p.start_date} ～ ${p.end_date}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="badge ${statusBadge}">${p.status}</span>
+            <button class="btn btn-ghost btn-sm" onclick="viewEvalProgress('${p.id}')">進捗確認</button>
+            ${p.status === '進行中' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="closeEvalPeriod('${p.id}')">完了にする</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== テンプレート作成 =====
+function openEvalTemplateModal() {
+  document.getElementById('eval-tmpl-name').value = '';
+  document.getElementById('eval-tmpl-dept').value = '';
+  clearDateParts('eval-tmpl-deadline');
+  document.getElementById('eval-tmpl-has-self').checked = true;
+  document.getElementById('eval-tmpl-has-superior').checked = true;
+  document.getElementById('eval-tmpl-has-peer').checked = true;
+  evalItemRows = [
+    { type: 'rating', question: '業務達成度', eval_type: 'both' },
+    { type: 'rating', question: '責任感', eval_type: 'both' },
+    { type: 'text', question: '今期頑張ったこと', eval_type: 'self' },
+    { type: 'text', question: '今後の目標', eval_type: 'self' },
+  ];
+  evalPeerQRows = [
+    { question: '今期、特に頑張っていた人を選んでください', max_select: 2, required: true }
+  ];
+  renderEvalItemRows();
+  renderEvalPeerQRows();
+  openModal('eval-template-modal');
+}
+
+function addEvalItem() {
+  evalItemRows.push({ type: 'rating', question: '', eval_type: 'both' });
+  renderEvalItemRows();
+}
+
+function removeEvalItem(i) {
+  evalItemRows.splice(i, 1);
+  renderEvalItemRows();
+}
+
+function renderEvalItemRows() {
+  const el = document.getElementById('eval-items-container');
+  if (!el) return;
+  el.innerHTML = evalItemRows.map((row, i) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+      <div class="form-row" style="margin-bottom:8px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">項目名</label>
+          <input type="text" class="form-input" value="${row.question}"
+            onchange="evalItemRows[${i}].question = this.value">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">形式</label>
+          <select class="form-input" onchange="evalItemRows[${i}].type = this.value">
+            <option value="rating" ${row.type === 'rating' ? 'selected' : ''}>5段階評価</option>
+            <option value="text" ${row.type === 'text' ? 'selected' : ''}>自由記述</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <select class="form-input" style="width:auto;font-size:12px;padding:4px 8px" onchange="evalItemRows[${i}].eval_type = this.value">
+          <option value="both" ${row.eval_type === 'both' ? 'selected' : ''}>自己・上長共通</option>
+          <option value="self" ${row.eval_type === 'self' ? 'selected' : ''}>自己評価のみ</option>
+          <option value="superior" ${row.eval_type === 'superior' ? 'selected' : ''}>上長評価のみ</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="removeEvalItem(${i})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addEvalPeerQuestion() {
+  evalPeerQRows.push({ question: '', max_select: 2, required: true });
+  renderEvalPeerQRows();
+}
+
+function removeEvalPeerQ(i) {
+  evalPeerQRows.splice(i, 1);
+  renderEvalPeerQRows();
+}
+
+function renderEvalPeerQRows() {
+  const el = document.getElementById('eval-peer-questions-container');
+  if (!el) return;
+  el.innerHTML = evalPeerQRows.map((row, i) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+      <div class="form-group" style="margin-bottom:8px">
+        <label class="form-label">設問</label>
+        <input type="text" class="form-input" value="${row.question}" placeholder="例: 今期特に頑張っていた人"
+          onchange="evalPeerQRows[${i}].question = this.value">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+          <label class="form-label" style="margin:0">最大選択数</label>
+          <input type="number" class="form-input" style="width:70px;padding:4px 8px" min="1" max="10" value="${row.max_select}"
+            onchange="evalPeerQRows[${i}].max_select = parseInt(this.value)">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" ${row.required ? 'checked' : ''} style="width:14px;height:14px"
+              onchange="evalPeerQRows[${i}].required = this.checked"> 必須
+          </label>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="removeEvalPeerQ(${i})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function saveEvalTemplate() {
+  const name = document.getElementById('eval-tmpl-name').value.trim();
+  if (!name) { toast('テンプレート名を入力してください', 'error'); return; }
+
+  const body = {
+    name,
+    target_department: document.getElementById('eval-tmpl-dept').value.trim() || null,
+    deadline: document.getElementById('eval-tmpl-deadline').value || null,
+    has_self_eval: document.getElementById('eval-tmpl-has-self').checked,
+    has_superior_eval: document.getElementById('eval-tmpl-has-superior').checked,
+    has_peer_eval: document.getElementById('eval-tmpl-has-peer').checked,
+    created_by: currentUser.id
+  };
+
+  const res = await apiPost('eval_templates', body);
+  if (!res || !res[0]) { toast('保存に失敗しました', 'error'); return; }
+  const tmplId = res[0].id;
+  evalTemplates.unshift(res[0]);
+
+  // 評価項目を保存
+  for (let i = 0; i < evalItemRows.length; i++) {
+    const row = evalItemRows[i];
+    if (!row.question.trim()) continue;
+    await apiPost('eval_items', {
+      template_id: tmplId,
+      eval_type: row.eval_type,
+      item_type: row.type,
+      question: row.question,
+      sort_order: i
+    });
+  }
+
+  // 他者評価設問を保存
+  for (let i = 0; i < evalPeerQRows.length; i++) {
+    const row = evalPeerQRows[i];
+    if (!row.question.trim()) continue;
+    await apiPost('eval_peer_questions', {
+      template_id: tmplId,
+      question: row.question,
+      max_select: row.max_select,
+      required: row.required,
+      sort_order: i
+    });
+  }
+
+  closeModal('eval-template-modal');
+  toast('テンプレートを保存しました');
+}
+
+// ===== 評価期間 =====
+function openEvalPeriodModal() {
+  document.getElementById('eval-period-name').value = '';
+  clearDateParts('eval-period-start');
+  clearDateParts('eval-period-end');
+  // テンプレート選択肢を更新
+  const sel = document.getElementById('eval-period-template');
+  sel.innerHTML = '<option value="">選択してください</option>' +
+    evalTemplates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  openModal('eval-period-modal');
+}
+
+async function saveEvalPeriod() {
+  const name = document.getElementById('eval-period-name').value.trim();
+  const templateId = document.getElementById('eval-period-template').value;
+  const startDate = document.getElementById('eval-period-start').value;
+  const endDate = document.getElementById('eval-period-end').value;
+
+  if (!name || !templateId || !startDate || !endDate) {
+    toast('すべての項目を入力してください', 'error'); return;
+  }
+
+  const res = await apiPost('eval_periods', {
+    name, template_id: templateId, start_date: startDate, end_date: endDate, status: '進行中'
+  });
+  if (res && res[0]) evalPeriods.unshift(res[0]);
+  closeModal('eval-period-modal');
+  renderEvalPeriodsList();
+  toast('評価期間を開始しました');
+}
+
+async function closeEvalPeriod(id) {
+  await apiPatch(`eval_periods?id=eq.${id}`, { status: '完了' });
+  const idx = evalPeriods.findIndex(p => p.id === id);
+  if (idx >= 0) evalPeriods[idx].status = '完了';
+  renderEvalPeriodsList();
+  toast('評価期間を完了にしました');
+}
+
+// ===== 進捗確認 =====
+async function viewEvalProgress(periodId) {
+  const period = evalPeriods.find(p => p.id === periodId);
+  if (!period) return;
+  const tmpl = evalTemplates.find(t => t.id === period.template_id);
+
+  // 対象社員を取得
+  let targetEmps = employees.filter(e => e.role !== '総務部' && e.role !== '役員');
+  if (tmpl && tmpl.target_department) {
+    targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
+  }
+
+  // 自己評価提出済み社員
+  const selfAnswers = await apiGet(`eval_self_answers?period_id=eq.${periodId}&submitted=eq.true&select=employee_id`) || [];
+  const submittedIds = new Set(selfAnswers.map(a => a.employee_id));
+
+  const total = targetEmps.length;
+  const submitted = targetEmps.filter(e => submittedIds.has(e.id)).length;
+  const rate = total > 0 ? Math.round(submitted / total * 100) : 0;
+
+  const notSubmitted = targetEmps.filter(e => !submittedIds.has(e.id)).map(e => e.name).join('、');
+
+  const el = document.getElementById('eval-periods-list');
+  const progressHtml = `
+    <div class="card" style="margin-bottom:16px;border:2px solid var(--primary)">
+      <div class="card-header">
+        <div class="card-title">📊 ${period.name} 進捗</div>
+        <button class="btn btn-ghost btn-sm" onclick="loadEvalManage()">戻る</button>
+      </div>
+      <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">対象者</div>
+          <div style="font-size:28px;font-weight:700;color:var(--primary)">${total}名</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">回答済</div>
+          <div style="font-size:28px;font-weight:700;color:var(--success)">${submitted}名</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">未回答</div>
+          <div style="font-size:28px;font-weight:700;color:var(--warning)">${total - submitted}名</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">回答率</div>
+          <div style="font-size:28px;font-weight:700;color:var(--text)">${rate}%</div>
+        </div>
+      </div>
+      ${notSubmitted ? `<div style="padding:0 16px 16px;font-size:13px;color:var(--text-sub)">未回答：${notSubmitted}</div>` : ''}
+    </div>
+  `;
+  el.innerHTML = progressHtml;
+}
+
+// ===== 自己評価 =====
+async function loadSelfEval() {
+  const el = document.getElementById('self-eval-content');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-sub);text-align:center;padding:40px">読み込み中...</div>';
+
+  // 進行中の評価期間を取得
+  const periods = await apiGet('eval_periods?status=eq.進行中&select=*&order=created_at.desc') || [];
+  if (periods.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>現在進行中の評価期間がありません</p></div></div>';
+    return;
+  }
+
+  const period = periods[0];
+  const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
+  if (!tmpl || !tmpl.has_self_eval) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>この評価期間に自己評価はありません</p></div></div>';
+    return;
+  }
+
+  // 既存の回答を取得
+  const items = await apiGet(`eval_items?template_id=eq.${tmpl.id}&eval_type=in.(self,both)&order=sort_order.asc`) || [];
+  const answers = await apiGet(`eval_self_answers?period_id=eq.${period.id}&employee_id=eq.${currentUser.id}&select=*`) || [];
+  const answerMap = {};
+  answers.forEach(a => { answerMap[a.item_id] = a; });
+  const isSubmitted = answers.some(a => a.submitted);
+
+  currentEvalPeriod = period;
+
+  el.innerHTML = `
+    <div class="info-box" style="margin-bottom:16px">
+      <strong>${period.name}</strong>（期限：${tmpl.deadline || '未設定'}）
+      ${isSubmitted ? '<span class="badge badge-green" style="margin-left:8px">提出済</span>' : '<span class="badge badge-yellow" style="margin-left:8px">未提出</span>'}
+    </div>
+    ${items.map(item => `
+      <div class="card" style="margin-bottom:12px;padding:20px">
+        <div style="font-weight:600;margin-bottom:12px">${item.question}</div>
+        ${item.item_type === 'rating' ? `
+          <div style="display:flex;gap:8px;font-size:28px">
+            ${[1,2,3,4,5].map(n => `
+              <span style="cursor:${isSubmitted ? 'default' : 'pointer'};opacity:${(answerMap[item.id]?.rating || 0) >= n ? 1 : 0.2}"
+                onclick="${isSubmitted ? '' : `setSelfRating('${period.id}','${item.id}',${n})`}">★</span>
+            `).join('')}
+          </div>
+          <div id="rating-val-${item.id}" style="font-size:12px;color:var(--text-sub);margin-top:4px">${answerMap[item.id]?.rating ? `${answerMap[item.id].rating}/5` : ''}</div>
+        ` : `
+          <textarea class="form-input" rows="3" ${isSubmitted ? 'readonly' : ''}
+            id="text-answer-${item.id}"
+            onchange="saveSelfTextAnswer('${period.id}','${item.id}',this.value)"
+            style="resize:vertical">${answerMap[item.id]?.text_answer || ''}</textarea>
+        `}
+      </div>
+    `).join('')}
+    ${!isSubmitted ? `<button class="btn btn-primary" style="width:100%" onclick="submitSelfEval('${period.id}')">自己評価を提出する</button>` : ''}
+  `;
+}
+
+async function setSelfRating(periodId, itemId, rating) {
+  // 既存チェック
+  const existing = await apiGet(`eval_self_answers?period_id=eq.${periodId}&employee_id=eq.${currentUser.id}&item_id=eq.${itemId}&select=id`);
+  if (existing && existing.length > 0) {
+    await apiPatch(`eval_self_answers?id=eq.${existing[0].id}`, { rating });
+  } else {
+    await apiPost('eval_self_answers', { period_id: periodId, employee_id: currentUser.id, item_id: itemId, rating, submitted: false });
+  }
+  // 星の表示を更新
+  loadSelfEval();
+}
+
+async function saveSelfTextAnswer(periodId, itemId, text) {
+  const existing = await apiGet(`eval_self_answers?period_id=eq.${periodId}&employee_id=eq.${currentUser.id}&item_id=eq.${itemId}&select=id`);
+  if (existing && existing.length > 0) {
+    await apiPatch(`eval_self_answers?id=eq.${existing[0].id}`, { text_answer: text });
+  } else {
+    await apiPost('eval_self_answers', { period_id: periodId, employee_id: currentUser.id, item_id: itemId, text_answer: text, submitted: false });
+  }
+}
+
+async function submitSelfEval(periodId) {
+  await apiPatch(`eval_self_answers?period_id=eq.${periodId}&employee_id=eq.${currentUser.id}`, { submitted: true });
+  toast('自己評価を提出しました');
+  loadSelfEval();
+}
+
+// ===== 他者評価 =====
+async function loadPeerEval() {
+  const el = document.getElementById('peer-eval-content');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-sub);text-align:center;padding:40px">読み込み中...</div>';
+
+  const periods = await apiGet('eval_periods?status=eq.進行中&select=*&order=created_at.desc') || [];
+  if (periods.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>現在進行中の評価期間がありません</p></div></div>';
+    return;
+  }
+
+  const period = periods[0];
+  const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
+  if (!tmpl || !tmpl.has_peer_eval) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>この評価期間に他者評価はありません</p></div></div>';
+    return;
+  }
+
+  const questions = await apiGet(`eval_peer_questions?template_id=eq.${tmpl.id}&order=sort_order.asc`) || [];
+  const myAnswers = await apiGet(`eval_peer_answers?period_id=eq.${period.id}&voter_id=eq.${currentUser.id}&select=*`) || [];
+  const myAnswerMap = {};
+  myAnswers.forEach(a => {
+    if (!myAnswerMap[a.question_id]) myAnswerMap[a.question_id] = [];
+    myAnswerMap[a.question_id].push(a.selected_employee_id);
+  });
+
+  // 対象社員（自分以外）
+  let targetEmps = employees.filter(e => e.id !== currentUser.id && e.role !== '総務部');
+  if (tmpl.target_department) targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
+
+  el.innerHTML = `
+    <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> - 他者評価</div>
+    ${questions.map(q => {
+      const selected = myAnswerMap[q.id] || [];
+      return `
+        <div class="card" style="margin-bottom:12px;padding:20px">
+          <div style="font-weight:600;margin-bottom:4px">${q.question}</div>
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:12px">最大${q.max_select}名を選択${q.required ? '（必須）' : '（任意）'}</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${targetEmps.map(emp => {
+              const isSelected = selected.includes(emp.id);
+              return `
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;border-radius:var(--radius-sm);border:1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border)'};background:${isSelected ? 'var(--primary-light)' : 'var(--surface)'}">
+                  <input type="checkbox" ${isSelected ? 'checked' : ''} style="width:16px;height:16px"
+                    onchange="togglePeerAnswer('${period.id}','${q.id}','${emp.id}',this.checked,${q.max_select})">
+                  <div class="user-avatar" style="width:28px;height:28px;font-size:11px;background:${emp.avatar_color || '#2563EB'}">${emp.name.charAt(0)}</div>
+                  <span style="font-weight:500">${emp.name}</span>
+                  <span style="font-size:12px;color:var(--text-sub)">${emp.role}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }).join('')}
+    <button class="btn btn-primary" style="width:100%" onclick="submitPeerEval('${period.id}')">他者評価を提出する</button>
+  `;
+}
+
+async function togglePeerAnswer(periodId, questionId, empId, checked, maxSelect) {
+  const existing = await apiGet(`eval_peer_answers?period_id=eq.${periodId}&question_id=eq.${questionId}&voter_id=eq.${currentUser.id}&select=*`) || [];
+  if (checked) {
+    if (existing.length >= maxSelect) {
+      toast(`最大${maxSelect}名まで選択できます`, 'error');
+      loadPeerEval();
+      return;
+    }
+    await apiPost('eval_peer_answers', { period_id: periodId, question_id: questionId, voter_id: currentUser.id, selected_employee_id: empId });
+  } else {
+    const target = existing.find(a => a.selected_employee_id === empId);
+    if (target) await apiDelete(`eval_peer_answers?id=eq.${target.id}`);
+  }
+}
+
+async function submitPeerEval(periodId) {
+  toast('他者評価を提出しました');
+  loadPeerEval();
+}
+
+// ===== 上長評価 =====
+async function loadSuperiorEval() {
+  const el = document.getElementById('superior-eval-content');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-sub);text-align:center;padding:40px">読み込み中...</div>';
+
+  const periods = await apiGet('eval_periods?status=eq.進行中&select=*&order=created_at.desc') || [];
+  if (periods.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>現在進行中の評価期間がありません</p></div></div>';
+    return;
+  }
+
+  const period = periods[0];
+  const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
+  if (!tmpl || !tmpl.has_superior_eval) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>この評価期間に上長評価はありません</p></div></div>';
+    return;
+  }
+
+  // 自分が承認者の社員
+  const subordinates = employees.filter(e => e.approver_id === currentUser.id);
+  if (subordinates.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>評価対象の部下がいません</p></div></div>';
+    return;
+  }
+
+  const items = await apiGet(`eval_items?template_id=eq.${tmpl.id}&eval_type=in.(superior,both)&order=sort_order.asc`) || [];
+
+  el.innerHTML = `
+    <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> - 上長評価</div>
+    ${subordinates.map(emp => `
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header" style="cursor:pointer" onclick="togglePattern('sup-eval-body-${emp.id}',this)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="pattern-arrow-sup-eval-body-${emp.id}" style="color:var(--text-sub)">▶</span>
+            <div class="user-avatar" style="background:${emp.avatar_color || '#2563EB'}">${emp.name.charAt(0)}</div>
+            <div style="font-weight:600">${emp.name}</div>
+          </div>
+        </div>
+        <div id="sup-eval-body-${emp.id}" style="display:none;padding:16px">
+          ${items.map(item => `
+            <div style="margin-bottom:16px">
+              <div style="font-weight:600;margin-bottom:8px">${item.question}</div>
+              ${item.item_type === 'rating' ? `
+                <div style="display:flex;gap:8px;font-size:28px">
+                  ${[1,2,3,4,5].map(n => `<span style="cursor:pointer;opacity:0.3" id="sup-star-${emp.id}-${item.id}-${n}"
+                    onclick="setSuperiorRating('${period.id}','${item.id}','${emp.id}',${n})">★</span>`).join('')}
+                </div>
+              ` : `
+                <textarea class="form-input" rows="3" style="resize:vertical"
+                  onchange="saveSuperiorText('${period.id}','${item.id}','${emp.id}',this.value)"></textarea>
+              `}
+            </div>
+          `).join('')}
+          <button class="btn btn-primary btn-sm" onclick="submitSuperiorEval('${period.id}','${emp.id}')">提出する</button>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  // 既存の上長評価を反映
+  for (const emp of subordinates) {
+    const supAnswers = await apiGet(`eval_superior_answers?period_id=eq.${period.id}&evaluator_id=eq.${currentUser.id}&target_employee_id=eq.${emp.id}&select=*`) || [];
+    supAnswers.forEach(a => {
+      if (a.rating) {
+        for (let n = 1; n <= 5; n++) {
+          const star = document.getElementById(`sup-star-${emp.id}-${a.item_id}-${n}`);
+          if (star) star.style.opacity = n <= a.rating ? '1' : '0.2';
+        }
+      }
+    });
+  }
+}
+
+async function setSuperiorRating(periodId, itemId, targetEmpId, rating) {
+  const existing = await apiGet(`eval_superior_answers?period_id=eq.${periodId}&evaluator_id=eq.${currentUser.id}&target_employee_id=eq.${targetEmpId}&item_id=eq.${itemId}&select=id`);
+  if (existing && existing.length > 0) {
+    await apiPatch(`eval_superior_answers?id=eq.${existing[0].id}`, { rating });
+  } else {
+    await apiPost('eval_superior_answers', { period_id: periodId, evaluator_id: currentUser.id, target_employee_id: targetEmpId, item_id: itemId, rating, submitted: false });
+  }
+  for (let n = 1; n <= 5; n++) {
+    const star = document.getElementById(`sup-star-${targetEmpId}-${itemId}-${n}`);
+    if (star) star.style.opacity = n <= rating ? '1' : '0.2';
+  }
+}
+
+async function saveSuperiorText(periodId, itemId, targetEmpId, text) {
+  const existing = await apiGet(`eval_superior_answers?period_id=eq.${periodId}&evaluator_id=eq.${currentUser.id}&target_employee_id=eq.${targetEmpId}&item_id=eq.${itemId}&select=id`);
+  if (existing && existing.length > 0) {
+    await apiPatch(`eval_superior_answers?id=eq.${existing[0].id}`, { text_answer: text });
+  } else {
+    await apiPost('eval_superior_answers', { period_id: periodId, evaluator_id: currentUser.id, target_employee_id: targetEmpId, item_id: itemId, text_answer: text, submitted: false });
+  }
+}
+
+async function submitSuperiorEval(periodId, targetEmpId) {
+  await apiPatch(`eval_superior_answers?period_id=eq.${periodId}&evaluator_id=eq.${currentUser.id}&target_employee_id=eq.${targetEmpId}`, { submitted: true });
+  toast('上長評価を提出しました');
+}
+
+// ===== 評価結果 =====
+async function loadEvalResults() {
+  const el = document.getElementById('eval-results-content');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-sub);text-align:center;padding:40px">読み込み中...</div>';
+
+  const periods = await apiGet('eval_periods?select=*&order=created_at.desc') || [];
+  if (periods.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>評価期間がありません</p></div></div>';
+    return;
+  }
+
+  // 期間選択
+  const period = periods[0]; // 最新
+  const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
+  const peerQuestions = await apiGet(`eval_peer_questions?template_id=eq.${tmpl?.id}&order=sort_order.asc`) || [];
+
+  // 他者評価集計
+  let peerResultsHtml = '';
+  for (const q of peerQuestions) {
+    const answers = await apiGet(`eval_peer_answers?period_id=eq.${period.id}&question_id=eq.${q.id}&select=selected_employee_id`) || [];
+    const counts = {};
+    answers.forEach(a => { counts[a.selected_employee_id] = (counts[a.selected_employee_id] || 0) + 1; });
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    const maxCount = sorted[0]?.[1] || 1;
+
+    peerResultsHtml += `
+      <div class="card" style="margin-bottom:12px;padding:20px">
+        <div style="font-weight:600;margin-bottom:16px">${q.question}</div>
+        ${sorted.map(([empId, count]) => {
+          const emp = employees.find(e => e.id === empId);
+          const pct = Math.round(count / maxCount * 100);
+          return `
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
+                <span style="font-weight:500">${emp?.name || '不明'}</span>
+                <span style="color:var(--text-sub)">${count}票</span>
+              </div>
+              <div style="background:var(--border);border-radius:99px;height:8px">
+                <div style="background:var(--primary);border-radius:99px;height:8px;width:${pct}%;transition:width 0.5s"></div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+        ${sorted.length === 0 ? '<div style="color:var(--text-hint);font-size:13px">回答なし</div>' : ''}
+      </div>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> の評価結果</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px">他者評価集計</div>
+    ${peerResultsHtml || '<div class="card"><div class="empty-state"><p>他者評価データがありません</p></div></div>'}
+  `;
+}
 
 // ===== TOAST =====
 function toast(msg, type = 'success') {
