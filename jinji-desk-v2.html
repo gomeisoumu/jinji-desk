@@ -4977,8 +4977,8 @@ async function loadPeerEval() {
     myAnswerMap[a.question_id].push(a.selected_employee_id);
   });
 
-  // 対象社員（自分以外）
-  let targetEmps = employees.filter(e => e.id !== currentUser.id && e.role !== '総務部');
+  // 対象社員（自分以外・役員・総務部除く）
+  let targetEmps = employees.filter(e => e.id !== currentUser.id && e.role !== '総務部' && e.role !== '役員');
   if (tmpl.target_department) targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
   if (!tmpl.include_part) targetEmps = targetEmps.filter(e => e.role !== 'パート・アルバイト');
 
