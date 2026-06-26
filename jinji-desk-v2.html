@@ -5144,8 +5144,30 @@ async function loadEvalResults() {
     return;
   }
 
-  // 期間選択
-  const period = periods[0]; // 最新
+  // 期間選択セレクトを表示
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <label class="form-label" style="margin:0;white-space:nowrap">評価期間</label>
+      <select class="form-input" id="eval-result-period-sel" onchange="renderEvalResults(this.value)" style="max-width:300px">
+        ${periods.map(p => `<option value="${p.id}">${p.name}（${p.status}）</option>`).join('')}
+      </select>
+    </div>
+    <div id="eval-results-body"></div>
+  `;
+
+  // 最初の期間を表示
+  renderEvalResults(periods[0].id);
+}
+
+async function renderEvalResults(periodId) {
+  const el = document.getElementById('eval-results-body');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-sub);text-align:center;padding:40px">読み込み中...</div>';
+
+  const periods = await apiGet(`eval_periods?id=eq.${periodId}&select=*`) || [];
+  const period = periods[0];
+  if (!period) return;
+
   const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
   const peerQuestions = await apiGet(`eval_peer_questions?template_id=eq.${tmpl?.id}&order=sort_order.asc`) || [];
 
@@ -5182,7 +5204,6 @@ async function loadEvalResults() {
   }
 
   el.innerHTML = `
-    <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> の評価結果</div>
     <div style="font-size:14px;font-weight:600;margin-bottom:12px">他者評価集計</div>
     ${peerResultsHtml || '<div class="card"><div class="empty-state"><p>他者評価データがありません</p></div></div>'}
   `;
