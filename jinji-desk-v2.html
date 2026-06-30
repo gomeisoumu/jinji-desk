@@ -5247,6 +5247,15 @@ async function renderEvalResults(periodId) {
   buildSubNav('eval-result-type-nav', 'eval-result-type-content', tabs);
 }
 
+function togglePersonCard(empId) {
+  const body = document.getElementById('eval-person-body-' + empId);
+  const arrow = document.getElementById('pattern-arrow-eval-person-body-' + empId);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
 async function renderPersonalResults(targetEmps, allItems, selfAnswers, supAnswers) {
   const el = document.getElementById('eval-result-personal');
   if (!el) return;
@@ -5290,7 +5299,7 @@ async function renderPersonalResults(targetEmps, allItems, selfAnswers, supAnswe
     return `
       <div class="card" style="margin-bottom:12px;overflow:visible">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;border-radius:var(--radius)"
-          onclick="togglePattern('eval-person-body-${emp.id}',this)">
+          onclick="togglePersonCard('${emp.id}')">
           <div style="display:flex;align-items:center;gap:10px">
             <span id="pattern-arrow-eval-person-body-${emp.id}" style="color:var(--text-sub);font-size:12px">▶</span>
             <div class="user-avatar" style="background:${emp.avatar_color||'#2563EB'};width:32px;height:32px;font-size:13px">${emp.name.charAt(0)}</div>
