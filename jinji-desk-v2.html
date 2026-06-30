@@ -4594,6 +4594,10 @@ function renderEvalPeriodsList() {
   el.innerHTML = evalPeriods.map(p => {
     const tmpl = evalTemplates.find(t => t.id === p.template_id);
     const statusBadge = p.status === '完了' ? 'badge-green' : 'badge-blue';
+    const features = [];
+    if (tmpl?.has_self_eval) features.push('自己評価');
+    if (tmpl?.has_superior_eval) features.push('上長評価');
+    if (tmpl?.has_peer_eval) features.push('他者評価');
     return `
       <div class="card" style="margin-bottom:12px">
         <div class="card-header">
@@ -4602,16 +4606,57 @@ function renderEvalPeriodsList() {
             <div style="font-size:12px;color:var(--text-sub);margin-top:2px">
               ${tmpl ? tmpl.name : '—'} ／ ${p.start_date} ～ ${p.end_date}
             </div>
+            <div style="margin-top:4px;display:flex;gap:4px">
+              ${features.map(f => `<span class="badge badge-gray" style="font-size:10px">${f}</span>`).join('')}
+              ${tmpl?.target_department ? `<span class="badge badge-gray" style="font-size:10px">${tmpl.target_department}</span>` : ''}
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
             <span class="badge ${statusBadge}">${p.status}</span>
+            <button class="btn btn-ghost btn-sm" onclick="toggleEvalPeriodDetail('detail-${p.id}', this)">内容を見る</button>
             <button class="btn btn-ghost btn-sm" onclick="viewEvalProgress('${p.id}')">進捗確認</button>
             ${p.status === '進行中' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="closeEvalPeriod('${p.id}')">完了にする</button>` : ''}
           </div>
         </div>
+        <div id="detail-${p.id}" style="display:none;padding:16px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">読み込み中...</div>
+        </div>
       </div>
     `;
   }).join('');
+}
+
+async function toggleEvalPeriodDetail(detailId, btn) {
+  const el = document.getElementById(detailId);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  if (isOpen) {
+    el.style.display = 'none';
+    btn.textContent = '内容を見る';
+    return;
+  }
+  el.style.display = 'block';
+  btn.textContent = '閉じる';
+  if (el.dataset.loaded) return;
+  el.dataset.loaded = '1';
+  const periodId = detailId.replace('detail-', '');
+  const period = evalPeriods.find(p => p.id === periodId);
+  const tmpl = evalTemplates.find(t => t.id === period?.template_id);
+  if (!tmpl) { el.innerHTML = '<div style="color:var(--text-hint);font-size:13px">テンプレートが見つかりません</div>'; return; }
+  const items = await apiGet('eval_items?template_id=eq.' + tmpl.id + '&order=sort_order.asc') || [];
+  const peerQs = await apiGet('eval_peer_questions?template_id=eq.' + tmpl.id + '&order=sort_order.asc') || [];
+  const selfItems = items.filter(i => i.eval_type === 'self' || i.eval_type === 'both');
+  const supItems = items.filter(i => i.eval_type === 'superior' || i.eval_type === 'both');
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' +
+    (selfItems.length > 0 ? '<div><div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">自己評価項目</div>' +
+      selfItems.map(i => '<div style="padding:8px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px"><span class="badge ' + (i.item_type === 'rating' ? 'badge-blue' : 'badge-gray') + '" style="font-size:10px;margin-right:6px">' + (i.item_type === 'rating' ? '5段階' : '記述') + '</span>' + i.question + '</div>').join('') + '</div>' : '') +
+    (supItems.length > 0 ? '<div><div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">上長評価項目</div>' +
+      supItems.map(i => '<div style="padding:8px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px"><span class="badge ' + (i.item_type === 'rating' ? 'badge-blue' : 'badge-gray') + '" style="font-size:10px;margin-right:6px">' + (i.item_type === 'rating' ? '5段階' : '記述') + '</span>' + i.question + '</div>').join('') + '</div>' : '') +
+    (peerQs.length > 0 ? '<div><div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:8px">他者評価設問</div>' +
+      peerQs.map(q => '<div style="padding:8px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px"><div>' + q.question + '</div><div style="font-size:11px;color:var(--text-hint);margin-top:2px">最大' + q.max_select + '名 ' + (q.required ? '（必須）' : '（任意）') + '</div></div>').join('') + '</div>' : '') +
+    '</div>' +
+    (tmpl.deadline ? '<div style="font-size:12px;color:var(--text-sub);margin-top:12px">回答期限：' + tmpl.deadline + '</div>' : '');
 }
 
 // ===== テンプレート作成 =====
@@ -5169,10 +5214,118 @@ async function renderEvalResults(periodId) {
   if (!period) return;
 
   const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
+  const allItems = await apiGet(`eval_items?template_id=eq.${tmpl?.id}&order=sort_order.asc`) || [];
   const peerQuestions = await apiGet(`eval_peer_questions?template_id=eq.${tmpl?.id}&order=sort_order.asc`) || [];
 
-  // 他者評価集計
-  let peerResultsHtml = '';
+  // 対象社員
+  let targetEmps = employees.filter(e => e.role !== '総務部' && e.role !== '役員');
+  if (tmpl?.target_department) targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
+  if (!tmpl?.include_part) targetEmps = targetEmps.filter(e => e.role !== 'パート・アルバイト');
+
+  // 自己評価・上長評価の回答を全取得
+  const selfAnswers = await apiGet(`eval_self_answers?period_id=eq.${periodId}&select=*`) || [];
+  const supAnswers = await apiGet(`eval_superior_answers?period_id=eq.${periodId}&select=*`) || [];
+
+  // タブで切り替え
+  const hasSelf = tmpl?.has_self_eval;
+  const hasSup = tmpl?.has_superior_eval;
+  const hasPeer = tmpl?.has_peer_eval;
+
+  let html = `
+    <div class="sub-nav" id="eval-result-type-nav" style="margin-bottom:16px"></div>
+    <div id="eval-result-type-content">
+      ${hasSelf || hasSup ? `<div id="eval-result-personal" style="display:none"></div>` : ''}
+      ${hasPeer ? `<div id="eval-result-peer" style="display:none"></div>` : ''}
+    </div>
+  `;
+  el.innerHTML = html;
+
+  const tabs = [];
+  if (hasSelf || hasSup) tabs.push({ id: 'eval-result-personal', label: '個人別評価', fn: () => renderPersonalResults(targetEmps, allItems, selfAnswers, supAnswers) });
+  if (hasPeer) tabs.push({ id: 'eval-result-peer', label: '他者評価集計', fn: () => renderPeerResults(period, peerQuestions) });
+
+  buildSubNav('eval-result-type-nav', 'eval-result-type-content', tabs);
+}
+
+async function renderPersonalResults(targetEmps, allItems, selfAnswers, supAnswers) {
+  const el = document.getElementById('eval-result-personal');
+  if (!el) return;
+
+  const selfItems = allItems.filter(i => i.eval_type === 'self' || i.eval_type === 'both');
+  const supItems = allItems.filter(i => i.eval_type === 'superior' || i.eval_type === 'both');
+
+  const stars = n => [1,2,3,4,5].map(i => `<span style="color:${i<=n?'#F59E0B':'#D1D5DB'};font-size:18px">★</span>`).join('');
+
+  el.innerHTML = targetEmps.map(emp => {
+    const empSelf = selfAnswers.filter(a => a.employee_id === emp.id);
+    const empSup = supAnswers.filter(a => a.target_employee_id === emp.id);
+    const isSubmitted = empSelf.some(a => a.submitted);
+
+    const selfHtml = selfItems.map(item => {
+      const ans = empSelf.find(a => a.item_id === item.id);
+      return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:4px">${item.question}</div>
+          ${item.item_type === 'rating'
+            ? `<div>${ans?.rating ? stars(ans.rating) : '<span style="color:var(--text-hint);font-size:12px">未回答</span>'}</div>`
+            : `<div style="font-size:13px;white-space:pre-wrap">${ans?.text_answer || '<span style="color:var(--text-hint);font-size:12px">未回答</span>'}</div>`
+          }
+        </div>
+      `;
+    }).join('');
+
+    const supHtml = supItems.map(item => {
+      const ans = empSup.find(a => a.item_id === item.id);
+      return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:4px">${item.question}</div>
+          ${item.item_type === 'rating'
+            ? `<div>${ans?.rating ? stars(ans.rating) : '<span style="color:var(--text-hint);font-size:12px">未回答</span>'}</div>`
+            : `<div style="font-size:13px;white-space:pre-wrap">${ans?.text_answer || '<span style="color:var(--text-hint);font-size:12px">未回答</span>'}</div>`
+          }
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header" style="cursor:pointer" onclick="togglePattern('eval-person-body-${emp.id}',this)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="pattern-arrow-eval-person-body-${emp.id}" style="color:var(--text-sub)">▶</span>
+            <div class="user-avatar" style="background:${emp.avatar_color||'#2563EB'}">${emp.name.charAt(0)}</div>
+            <div>
+              <div style="font-weight:600">${emp.name}</div>
+              <div style="font-size:12px;color:var(--text-sub)">${emp.role} · ${emp.department||''}</div>
+            </div>
+          </div>
+          <span class="badge ${isSubmitted ? 'badge-green' : 'badge-yellow'}">${isSubmitted ? '提出済' : '未提出'}</span>
+        </div>
+        <div id="eval-person-body-${emp.id}" style="display:none;padding:0 16px 16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:16px">
+            ${selfItems.length > 0 ? `
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:8px">自己評価</div>
+                ${selfHtml}
+              </div>
+            ` : ''}
+            ${supItems.length > 0 ? `
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--warning);margin-bottom:8px">上長評価</div>
+                ${supHtml}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') || '<div class="card"><div class="empty-state"><p>対象社員がいません</p></div></div>';
+}
+
+async function renderPeerResults(period, peerQuestions) {
+  const el = document.getElementById('eval-result-peer');
+  if (!el) return;
+
+  let html = '';
   for (const q of peerQuestions) {
     const answers = await apiGet(`eval_peer_answers?period_id=eq.${period.id}&question_id=eq.${q.id}&select=selected_employee_id`) || [];
     const counts = {};
@@ -5180,7 +5333,7 @@ async function renderEvalResults(periodId) {
     const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
     const maxCount = sorted[0]?.[1] || 1;
 
-    peerResultsHtml += `
+    html += `
       <div class="card" style="margin-bottom:12px;padding:20px">
         <div style="font-weight:600;margin-bottom:16px">${q.question}</div>
         ${sorted.map(([empId, count]) => {
@@ -5203,10 +5356,7 @@ async function renderEvalResults(periodId) {
     `;
   }
 
-  el.innerHTML = `
-    <div style="font-size:14px;font-weight:600;margin-bottom:12px">他者評価集計</div>
-    ${peerResultsHtml || '<div class="card"><div class="empty-state"><p>他者評価データがありません</p></div></div>'}
-  `;
+  el.innerHTML = html || '<div class="card"><div class="empty-state"><p>他者評価データがありません</p></div></div>';
 }
 
 // ===== TOAST =====
