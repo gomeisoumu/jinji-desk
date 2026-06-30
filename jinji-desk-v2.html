@@ -1789,6 +1789,22 @@
           <input type="hidden" id="eval-period-end">
         </div>
       </div>
+      <hr class="divider">
+      <div class="form-group">
+        <label class="form-label">対象部署で絞り込み</label>
+        <select id="eval-period-dept-filter" class="form-input" onchange="filterEvalTargetsByDept()">
+          <option value="">部署を選択（全部署）</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label class="form-label" style="margin:0">対象者を選択 *</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="selectAllEvalTargets(true)">全選択</button>
+          <button class="btn btn-ghost btn-sm" onclick="selectAllEvalTargets(false)">全解除</button>
+        </div>
+      </div>
+      <div id="eval-target-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px"></div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:6px" id="eval-target-count"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('eval-period-modal')">キャンセル</button>
@@ -4813,13 +4829,65 @@ async function saveEvalTemplate() {
 // ===== 評価期間 =====
 function openEvalPeriodModal() {
   document.getElementById('eval-period-name').value = '';
+  document.getElementById('eval-period-template').value = '';
   clearDateParts('eval-period-start');
   clearDateParts('eval-period-end');
+
   // テンプレート選択肢を更新
   const sel = document.getElementById('eval-period-template');
   sel.innerHTML = '<option value="">選択してください</option>' +
     evalTemplates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+  // 部署フィルター
+  const depts = [...new Set(employees.filter(e => e.department).map(e => e.department))];
+  const deptSel = document.getElementById('eval-period-dept-filter');
+  deptSel.innerHTML = '<option value="">部署を選択（全部署）</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+
+  // 対象者リスト初期表示（役員・総務部除く）
+  renderEvalTargetList('');
   openModal('eval-period-modal');
+}
+
+function renderEvalTargetList(deptFilter) {
+  const el = document.getElementById('eval-target-list');
+  const countEl = document.getElementById('eval-target-count');
+  if (!el) return;
+
+  let list = employees.filter(e => e.role !== '総務部' && e.role !== '役員');
+  if (deptFilter) list = list.filter(e => e.department === deptFilter);
+
+  el.innerHTML = list.map(emp => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:4px"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <input type="checkbox" class="eval-target-check" data-id="${emp.id}" checked
+        style="width:16px;height:16px;cursor:pointer" onchange="updateEvalTargetCount()">
+      <div class="user-avatar" style="width:28px;height:28px;font-size:11px;background:${emp.avatar_color||'#2563EB'}">${emp.name.charAt(0)}</div>
+      <div>
+        <div style="font-weight:500;font-size:13px">${emp.name}</div>
+        <div style="font-size:11px;color:var(--text-sub)">${emp.role}${emp.department ? ' · ' + emp.department : ''}</div>
+      </div>
+    </label>
+  `).join('');
+
+  updateEvalTargetCount();
+}
+
+function filterEvalTargetsByDept() {
+  const dept = document.getElementById('eval-period-dept-filter').value;
+  renderEvalTargetList(dept);
+}
+
+function selectAllEvalTargets(checked) {
+  document.querySelectorAll('.eval-target-check').forEach(cb => cb.checked = checked);
+  updateEvalTargetCount();
+}
+
+function updateEvalTargetCount() {
+  const total = document.querySelectorAll('.eval-target-check').length;
+  const selected = document.querySelectorAll('.eval-target-check:checked').length;
+  const el = document.getElementById('eval-target-count');
+  if (el) el.textContent = `${total}名中 ${selected}名を選択中`;
 }
 
 async function saveEvalPeriod() {
@@ -4832,13 +4900,27 @@ async function saveEvalPeriod() {
     toast('すべての項目を入力してください', 'error'); return;
   }
 
+  // 選択された対象者
+  const selectedIds = [...document.querySelectorAll('.eval-target-check:checked')].map(cb => cb.dataset.id);
+  if (selectedIds.length === 0) {
+    toast('対象者を1名以上選択してください', 'error'); return;
+  }
+
   const res = await apiPost('eval_periods', {
     name, template_id: templateId, start_date: startDate, end_date: endDate, status: '進行中'
   });
-  if (res && res[0]) evalPeriods.unshift(res[0]);
+  if (!res || !res[0]) { toast('保存に失敗しました', 'error'); return; }
+  const periodId = res[0].id;
+  evalPeriods.unshift(res[0]);
+
+  // 対象者を保存
+  for (const empId of selectedIds) {
+    await apiPost('eval_period_targets', { period_id: periodId, employee_id: empId });
+  }
+
   closeModal('eval-period-modal');
   renderEvalPeriodsList();
-  toast('評価期間を開始しました');
+  toast(`評価期間を開始しました（対象：${selectedIds.length}名）`);
 }
 
 async function closeEvalPeriod(id) {
@@ -4922,6 +5004,13 @@ async function loadSelfEval() {
   const tmpl = (await apiGet(`eval_templates?id=eq.${period.template_id}&select=*`))?.[0];
   if (!tmpl || !tmpl.has_self_eval) {
     el.innerHTML = '<div class="card"><div class="empty-state"><p>この評価期間に自己評価はありません</p></div></div>';
+    return;
+  }
+
+  // 対象者チェック
+  const targets = await apiGet(`eval_period_targets?period_id=eq.${period.id}&employee_id=eq.${currentUser.id}&select=id`) || [];
+  if (targets.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>この評価期間の対象者ではありません</p></div></div>';
     return;
   }
 
@@ -5014,6 +5103,17 @@ async function loadPeerEval() {
     return;
   }
 
+  // 対象者チェック
+  const myTargets = await apiGet(`eval_period_targets?period_id=eq.${period.id}&employee_id=eq.${currentUser.id}&select=id`) || [];
+  if (myTargets.length === 0) {
+    el.innerHTML = '<div class="card"><div class="empty-state"><p>この評価期間の対象者ではありません</p></div></div>';
+    return;
+  }
+
+  // 他者評価の選択肢は対象者リストから（自分以外）
+  const periodTargets = await apiGet(`eval_period_targets?period_id=eq.${period.id}&select=employee_id`) || [];
+  const targetEmpIds = periodTargets.map(t => t.employee_id).filter(id => id !== currentUser.id);
+
   const questions = await apiGet(`eval_peer_questions?template_id=eq.${tmpl.id}&order=sort_order.asc`) || [];
   const myAnswers = await apiGet(`eval_peer_answers?period_id=eq.${period.id}&voter_id=eq.${currentUser.id}&select=*`) || [];
   const myAnswerMap = {};
@@ -5021,11 +5121,7 @@ async function loadPeerEval() {
     if (!myAnswerMap[a.question_id]) myAnswerMap[a.question_id] = [];
     myAnswerMap[a.question_id].push(a.selected_employee_id);
   });
-
-  // 対象社員（自分以外・役員・総務部除く）
-  let targetEmps = employees.filter(e => e.id !== currentUser.id && e.role !== '総務部' && e.role !== '役員');
-  if (tmpl.target_department) targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
-  if (!tmpl.include_part) targetEmps = targetEmps.filter(e => e.role !== 'パート・アルバイト');
+  const targetEmps = employees.filter(e => targetEmpIds.includes(e.id) && e.role !== '役員' && e.role !== '総務部');
 
   el.innerHTML = `
     <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> - 他者評価</div>
@@ -5217,10 +5313,10 @@ async function renderEvalResults(periodId) {
   const allItems = await apiGet(`eval_items?template_id=eq.${tmpl?.id}&order=sort_order.asc`) || [];
   const peerQuestions = await apiGet(`eval_peer_questions?template_id=eq.${tmpl?.id}&order=sort_order.asc`) || [];
 
-  // 対象社員
-  let targetEmps = employees.filter(e => e.role !== '総務部' && e.role !== '役員');
-  if (tmpl?.target_department) targetEmps = targetEmps.filter(e => e.department === tmpl.target_department);
-  if (!tmpl?.include_part) targetEmps = targetEmps.filter(e => e.role !== 'パート・アルバイト');
+  // 対象社員はperiod targetsから取得
+  const periodTargetRows = await apiGet(`eval_period_targets?period_id=eq.${periodId}&select=employee_id`) || [];
+  const periodTargetIds = periodTargetRows.map(t => t.employee_id);
+  let targetEmps = employees.filter(e => periodTargetIds.includes(e.id));
 
   // 自己評価・上長評価の回答を全取得
   const selfAnswers = await apiGet(`eval_self_answers?period_id=eq.${periodId}&select=*`) || [];
