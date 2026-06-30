@@ -5288,19 +5288,20 @@ async function renderPersonalResults(targetEmps, allItems, selfAnswers, supAnswe
     }).join('');
 
     return `
-      <div class="card" style="margin-bottom:12px">
-        <div class="card-header" style="cursor:pointer" onclick="togglePattern('eval-person-body-${emp.id}',this)">
+      <div class="card" style="margin-bottom:12px;overflow:visible">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;border-radius:var(--radius)"
+          onclick="togglePattern('eval-person-body-${emp.id}',this)">
           <div style="display:flex;align-items:center;gap:10px">
-            <span id="pattern-arrow-eval-person-body-${emp.id}" style="color:var(--text-sub)">▶</span>
-            <div class="user-avatar" style="background:${emp.avatar_color||'#2563EB'}">${emp.name.charAt(0)}</div>
+            <span id="pattern-arrow-eval-person-body-${emp.id}" style="color:var(--text-sub);font-size:12px">▶</span>
+            <div class="user-avatar" style="background:${emp.avatar_color||'#2563EB'};width:32px;height:32px;font-size:13px">${emp.name.charAt(0)}</div>
             <div>
-              <div style="font-weight:600">${emp.name}</div>
+              <div style="font-weight:600;font-size:14px">${emp.name}</div>
               <div style="font-size:12px;color:var(--text-sub)">${emp.role} · ${emp.department||''}</div>
             </div>
           </div>
           <span class="badge ${isSubmitted ? 'badge-green' : 'badge-yellow'}">${isSubmitted ? '提出済' : '未提出'}</span>
         </div>
-        <div id="eval-person-body-${emp.id}" style="display:none;padding:0 16px 16px">
+        <div id="eval-person-body-${emp.id}" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border)">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:16px">
             ${selfItems.length > 0 ? `
               <div>
