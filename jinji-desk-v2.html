@@ -1973,7 +1973,14 @@ function showApp() {
           patternSteps[s.pattern_id].push(s);
         }
       }
-      await checkAndGrantLeave(currentUser);
+      // 月1回だけ自動付与チェック
+      const now = new Date();
+      const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}`;
+      const lastGrant = localStorage.getItem(`jinji_last_grant_${currentUser.id}`);
+      if (lastGrant !== yearMonth) {
+        await checkAndGrantLeave(currentUser);
+        localStorage.setItem(`jinji_last_grant_${currentUser.id}`, yearMonth);
+      }
       loadMyDashboard();
     })();
   }
@@ -5204,9 +5211,10 @@ async function loadSuperiorEval() {
     <div class="info-box" style="margin-bottom:16px"><strong>${period.name}</strong> - 上長評価</div>
     ${subordinates.map(emp => `
       <div class="card" style="margin-bottom:12px">
-        <div class="card-header" style="cursor:pointer" onclick="togglePattern('sup-eval-body-${emp.id}',this)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer"
+          onclick="toggleSupEvalCard('${emp.id}')">
           <div style="display:flex;align-items:center;gap:10px">
-            <span id="pattern-arrow-sup-eval-body-${emp.id}" style="color:var(--text-sub)">▶</span>
+            <span id="pattern-arrow-sup-eval-body-${emp.id}" style="color:var(--text-sub);font-size:12px">▶</span>
             <div class="user-avatar" style="background:${emp.avatar_color || '#2563EB'}">${emp.name.charAt(0)}</div>
             <div style="font-weight:600">${emp.name}</div>
           </div>
@@ -5341,6 +5349,15 @@ async function renderEvalResults(periodId) {
   if (hasPeer) tabs.push({ id: 'eval-result-peer', label: '他者評価集計', fn: () => renderPeerResults(period, peerQuestions) });
 
   buildSubNav('eval-result-type-nav', 'eval-result-type-content', tabs);
+}
+
+function toggleSupEvalCard(empId) {
+  const body = document.getElementById('sup-eval-body-' + empId);
+  const arrow = document.getElementById('pattern-arrow-sup-eval-body-' + empId);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 
 function togglePersonCard(empId) {
