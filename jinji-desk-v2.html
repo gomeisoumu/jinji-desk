@@ -4574,6 +4574,12 @@ async function initEvalPage() {
     employees = await apiGet('employees?select=*&order=employee_number.asc') || [];
   }
 
+  // 全サブページを先に非表示
+  ['sub-self-eval','sub-peer-eval','sub-superior-eval','sub-eval-manage','sub-eval-results'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
   const tabs = [];
 
   // 自己評価・他者評価：正社員・パート・承認者のみ
